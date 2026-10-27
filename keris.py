@@ -566,10 +566,36 @@ class Sergap:
             if self.gap_ms > 60.0:
                 out(T("AWAS"), i18n.t("ukur_terlalu_lambat", gap=self.gap_ms), C_ERR)
 
+    def _tune_fire(self):
+        """Ukur RTT segar ke laras pertama, set offset tusuk seoptimal mungkin.
+
+        herorbl pakai offset tetap + jitter acak 1-8 ms. Di sini offset dihitung
+        dari RTT yang diukur detik itu juga: tusuk di -max(25, RTT/2) ms supaya
+        paket pertama mendarat tepat di batas. Kalau RTT berubah (sinyal naik
+        turun), offset ikut — tidak perlu tebak.
+        """
+        if self.gap_ms > 20.0:
+            return                      # jaringan lambat: biarkan -45 default
+        g, tok = self.laras[0]
+        try:
+            t0 = self.clock.now()
+            g.fire(g.req(tok))
+            g.read(timeout=5)
+            rtt = (self.clock.now() - t0) * 1000.0
+        except Exception:
+            return
+        # Forward delay terukur ~1.2x RTT di jaringan ini (bukan RTT/2).
+        # 45 ms adalah lantai: offset lebih dangkal pernah mendarat +20 ms.
+        off = max(45.0, rtt * 1.2)
+        self.fire_ms = -round(off)
+        out(T("sergap"), i18n.t("fire_offset", off=self.fire_ms, rtt=rtt),
+            C_DIM)
+
     def run(self, target):
         if not self.laras:
             out(T("gagal"), i18n.t("lane_tidak_ada"), C_ERR)
             return
+        self._tune_fire()
         base = target + self.fire_ms / 1000.0
         fire = [base + i * self.stagger for i in range(len(self.laras))]
         out(T("sergap"), i18n.t("sergap_rencana", lanes=len(self.laras),
