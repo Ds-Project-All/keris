@@ -50,39 +50,65 @@ Bracket simetris membuang separuh percobaan. KERIS hanya menembak ke depan.
 
 ## Pasang
 
-**Satu perintah di Termux:**
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/dhimesta090418-crypto/keris/main/install.sh | bash
-```
-
-Selesai. Installer memasang `python` kalau belum ada, mengunduh `keris.py`
-ke `~/keris/`, dan memeriksa hasilnya benar-benar jalan sebelum bilang sukses.
-
-Kalau lebih suka manual:
-
-```bash
-pkg install python -y
-curl -fsSL -o ~/keris.py https://raw.githubusercontent.com/dhimesta090418-crypto/keris/main/keris.py
-chmod +x ~/keris.py
-python ~/keris.py --versi
-```
-
-### Kalau belum punya Termux
+### 1. Termux
 
 Ambil dari [F-Droid](https://f-droid.org/packages/com.termux/) atau
 [GitHub release](https://github.com/termux/termux-app/releases). Versi Play
 Store sudah usang dan `pkg install` di sana gagal.
 
-### Cegah Android membekukan Termux
+### 2. Satu perintah
+
+Buka Termux, lalu:
 
 ```bash
-pkg install termux-api -y
+bash <(curl -s https://raw.githubusercontent.com/dhimesta090418-crypto/keris/main/install.sh)
 ```
 
-Lalu pasang app **Termux:API** dari F-Droid juga, dan izinkan notifikasinya.
-Tanpa ini Android bisa membekukan Termux saat menunggu lama — sergap gagal
-tanpa pesan apa pun.
+Installer mengurus semuanya: memasang `python` kalau belum ada, mengunduh
+`keris.py` ke `~/keris/`, memasang perintah `keris`, dan mengaktifkan
+wake-lock. Di akhir ia menjalankan `keris.py --versi` — kalau gagal, ia bilang
+GAGAL dan berhenti.
+
+### 3. Tutup Termux, buka lagi
+
+Alias baru terbaca saat shell dimulai ulang. Lalu:
+
+```bash
+keris-cal      # ukur jaringan, sekali saja
+keris          # sergap
+```
+
+### Perintah
+
+| Perintah | Fungsi |
+|---|---|
+| `keris` | sergap penuh |
+| `keris-cal` | ukur laju jaringan |
+| `keris-cek` | cek token masih sah |
+| `keris-test` | latihan pakai token palsu |
+| `keris-update` | ambil versi terbaru |
+
+Tanpa alias: `python3 ~/keris/keris.py`
+
+### Kalau alias tidak muncul
+
+```bash
+source ~/.bashrc
+```
+
+Atau langsung: `python3 ~/keris/keris.py`
+
+### Wake-lock
+
+Installer menjalankan `termux-wake-lock` supaya Android tidak membekukan
+Termux saat menunggu 3 menit. Kalau `termux-api` belum terpasang, installer
+memperingatkan dan melanjutkan — tapi sebaiknya dipasang:
+
+```bash
+pkg install termux-api
+```
+
+Lalu pasang app **Termux:API** dari F-Droid, izinkan notifikasinya.
 
 Minimalnya, kalau tidak mau repot:
 
@@ -92,16 +118,20 @@ Minimalnya, kalau tidak mau repot:
 ### Update
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dhimesta090418-crypto/keris/main/install.sh | bash
+keris-update
 ```
 
-Menimpa `keris.py` lama, menyimpan sisanya.
+Atau:
+
+```bash
+bash <(curl -s https://raw.githubusercontent.com/dhimesta090418-crypto/keris/main/install.sh)
+```
 
 ### Diuji di
 
 | Perangkat | Python | Hasil |
 |---|---|---|
-| Redmi Note 13 Pro 5G, Android 16, Termux | 3.14.8 | 64/64 tusukan, NTP +309.6 ms |
+| Redmi Note 13 Pro 5G, Android 16, Termux | 3.14.8 | 64/64 tusukan, NTP +307.8 ms |
 | Windows 10 | 3.14.7 | 64/64 tusukan, NTP −38.5 ms |
 | Windows 10 | 3.11 | 64/64 tusukan (uji kompatibilitas) |
 | Ubuntu 24.04 | 3.12.3 | 64/64 tusukan, endpoint Eropa |
