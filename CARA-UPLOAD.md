@@ -1,116 +1,83 @@
-# Cara Upload ke GitHub
+# Upload ke GitHub — pakai SSH
+
+Kunci SSH sudah dibuat di PC ini. Tinggal didaftarkan ke GitHub, lalu push.
+Tidak perlu Personal Access Token.
 
 Repo sudah siap di:
 ```
 C:\Users\Ds Project\AppData\Local\Temp\keris_repo
 ```
-
-Sudah ada commit `ba19f68`. Tinggal push. Pilih **satu** cara.
+Branch `main`, working tree bersih.
 
 ---
 
-## Cara A — lewat website GitHub (paling mudah, tanpa terminal)
+## Langkah 1 — daftarkan kunci SSH ke GitHub
 
-Cocok kalau kamu tidak mau menyentuh git lagi.
+Buka file ini, copy **seluruh isinya** (satu baris panjang):
 
-### 1. Buat repo kosong
+```
+C:\Users\Ds Project\.ssh\id_ed25519.pub
+```
+
+Isinya:
+
+```
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGcNRab2Lk7NwtMNnMhw38j+NdZIX4HHdxI6ddzxX7sz ds-keris@DESKTOP-1POG8AF
+```
+
+Lalu:
+
+1. Buka https://github.com/settings/keys
+2. Klik **New SSH key**
+3. **Title**: `PC ds keris`
+4. **Key type**: `Authentication Key`
+5. **Key**: paste baris di atas
+6. Klik **Add SSH key**
+
+Kalau GitHub minta password, masukkan password akun GitHub kamu.
+
+---
+
+## Langkah 2 — buat repo kosong
 
 1. Buka https://github.com/new
 2. **Repository name**: `keris`
-3. **Description**: `Presisi sergap tiket Unlock Bootloader Xiaomi`
+3. **Description**: `Sergap tiket Unlock Bootloader Xiaomi dari HP Android`
 4. Pilih **Public**
 5. **JANGAN** centang "Add a README file", "Add .gitignore", atau "Choose a license"
    — repo harus benar-benar kosong, kalau tidak nanti bentrok saat push
 6. Klik **Create repository**
 
-### 2. Ambil URL repo
+---
 
-Setelah dibuat, GitHub menampilkan halaman "Quick setup". Copy URL yang bentuknya:
-```
-https://github.com/USERNAME/keris.git
-```
+## Langkah 3 — push
 
-### 3. Push dari PC
-
-Buka **Git Bash** (bukan CMD), lalu:
+Buka **Git Bash** (bukan CMD), lalu (ganti `USERNAME`):
 
 ```bash
 cd "/c/Users/Ds Project/AppData/Local/Temp/keris_repo"
 
-git remote add origin https://github.com/USERNAME/keris.git
-git branch -M main
+git remote add origin git@github.com:USERNAME/keris.git
 git push -u origin main
 ```
 
-Ganti `USERNAME` dengan username GitHub kamu.
+Tidak ada prompt password. Kalau berhasil:
 
-### 4. Login saat diminta
-
-Git akan membuka jendela browser (Git Credential Manager). Klik **Sign in with
-your browser**, izinkan, selesai. Tidak perlu ketik password.
-
-Kalau muncul prompt terminal minta username/password: **password GitHub tidak
-berlaku**. Harus Personal Access Token — lihat bagian bawah.
+```
+Enumerating objects: 12, done.
+Writing objects: 100% (12/12), 8.42 KiB | 1.2 MiB/s, done.
+To github.com:USERNAME/keris.git
+ * [new branch]      main -> main
+```
 
 ---
 
-## Cara B — pakai GitHub CLI (kalau mau sekali perintah)
+## Langkah 4 — cek
 
-`gh` belum terpasang di PC kamu. Kalau mau pakai:
+Buka `https://github.com/USERNAME/keris`
 
-```bash
-winget install --id GitHub.cli
-```
-
-Tutup dan buka ulang terminal, lalu:
-
-```bash
-gh auth login
-```
-
-Pilih: **GitHub.com** → **HTTPS** → **Login with a web browser** → copy kode →
-Enter.
-
-Setelah login:
-
-```bash
-cd "/c/Users/Ds Project/AppData/Local/Temp/keris_repo"
-gh repo create keris --public --source=. --push \
-  --description "Presisi sergap tiket Unlock Bootloader Xiaomi"
-```
-
-Selesai — repo dibuat dan di-push sekaligus.
-
----
-
-## Kalau diminta password
-
-GitHub tidak menerima password akun sejak 2021. Pakai **Personal Access Token**:
-
-1. Buka https://github.com/settings/tokens?type=beta
-2. **Generate new token**
-3. **Token name**: `keris-push`
-4. **Expiration**: 30 days
-5. **Repository access**: pilih **Only select repositories** → `keris`
-6. **Permissions** → **Repository permissions** → **Contents**: **Read and write**
-7. **Generate token**
-8. Copy token (`github_pat_...`) — **hanya muncul sekali**
-
-Saat git minta password, tempel token itu (bukan password akun).
-Saat minta username, isi username GitHub kamu.
-
-Simpan token di tempat aman. Kalau hilang, harus generate ulang.
-
----
-
-## Setelah berhasil
-
-Cek di browser: `https://github.com/USERNAME/keris`
-
-Yang harus terlihat:
-- `keris.py`, `README.md`, `LICENSE`, `.gitignore`, `.gitattributes`
-- README tampil rapi dengan tabel
-- License badge "MIT" di sidebar kanan
+Yang harus terlihat: `keris.py`, `README.md`, `LICENSE`, `CARA-UPLOAD.md`,
+`.gitignore`, `.gitattributes`. Badge **MIT** di sidebar kanan.
 
 ---
 
@@ -129,27 +96,62 @@ git push
 
 ## Kalau gagal
 
+**`Permission denied (publickey)`**
+Kunci belum terdaftar atau salah copy. Buka
+https://github.com/settings/keys, pastikan baris `ssh-ed25519 AAAA...` ada
+utuh. Tes:
+
+```bash
+ssh -T git@github.com
+```
+
+Harus jawab: `Hi USERNAME! You've successfully authenticated...`
+
+**`Repository not found`**
+Salah username di URL, atau repo belum dibuat. Cek:
+
+```bash
+git remote -v
+```
+
 **`remote origin already exists`**
 ```bash
-git remote set-url origin https://github.com/USERNAME/keris.git
+git remote set-url origin git@github.com:USERNAME/keris.git
 ```
 
 **`failed to push some refs` / `rejected`**
 Repo di GitHub tidak kosong. Hapus repo di GitHub, buat ulang tanpa centang
 apa pun.
 
-**`Authentication failed`**
-Token salah atau kedaluwarsa. Generate token baru, lalu:
-```bash
-git credential-manager erase
-```
-lalu push lagi.
-
 **`src refspec main does not match any`**
 Belum ada commit. Jalankan `git log --oneline` — kalau kosong, commit dulu.
 
-**File keris.py tidak bisa dieksekusi di Linux setelah clone**
+**`Host key verification failed`**
+```bash
+ssh-keyscan github.com >> ~/.ssh/known_hosts
+```
+
+**File keris.py tidak bisa dieksekusi setelah clone**
 ```bash
 chmod +x keris.py
 ```
 Git tidak menyimpan permission executable dengan sempurna di semua platform.
+
+---
+
+## Catatan keamanan
+
+File `~/.ssh/id_ed25519` (tanpa `.pub`) adalah **kunci privat**. Jangan pernah
+di-copy, di-upload, atau dikirim ke siapa pun. Yang didaftarkan ke GitHub hanya
+file `.pub`.
+
+Kunci ini tidak punya passphrase — nyaman untuk push otomatis, tapi siapa pun
+yang bisa membaca file itu di PC ini bisa push ke repo kamu. Kalau mau lebih
+aman:
+
+```bash
+ssh-keygen -p -f ~/.ssh/id_ed25519
+```
+
+Lalu masukkan passphrase. Setelah itu setiap push akan minta passphrase
+(atau simpan sekali lewat ssh-agent).
