@@ -41,6 +41,20 @@ Get it from [F-Droid](https://f-droid.org/packages/com.termux/) or
 [GitHub release](https://github.com/termux/termux-app/releases). The Play Store
 build is out of date and `pkg install` fails there.
 
+Fresh install? After opening Termux for the first time, wait for its welcome
+text (`Welcome to Termux!`) — the package manager is still setting itself up in
+the background. Then update the package list first; a new Termux has **no**
+`curl` yet:
+
+```bash
+pkg update -y
+pkg install -y curl
+```
+
+`pkg update` may print mirror questions — just press Enter and accept the
+defaults. If it complains about unknown packages, run `termux-change-repo`,
+pick a mirror, then repeat.
+
 ### 2. One command
 
 ```bash

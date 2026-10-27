@@ -21,6 +21,7 @@ fi
 # ── 2. curl ───────────────────────────────────────────────────────────
 if ! command -v curl >/dev/null 2>&1; then
   say "curl belum ada — memasang"
+  pkg update -y
   pkg install -y curl
 fi
 
