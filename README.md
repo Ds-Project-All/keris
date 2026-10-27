@@ -1,39 +1,60 @@
 # KERIS
 
-Xiaomi bootloader-unlock (UBL) ticket sniper for Android. Single file, stdlib
-only, no root. **by Ds Project**
+<img src="assets/banner.svg" alt="KERIS — Xiaomi bootloader-unlock ticket sniper" width="820">
 
-```
-dns          sgp-api.buy.mi.com -> 47.236.122.116, 43.98.171.210, ...
-ntp          offset +263.8 ms (delay 34.3, time.google.com)
-lane         4/4 ready (1 account)
-measure      5.3 ms/req -> 32 shots cover 169 ms
-snipe        4 lanes x 32 = 128 shots
-test         64 responses, 64 reached server
-test         responses +0 .. +89 ms from target
-```
-
-> **Status: Production Ready.** GPL-3.0. See [License](#license).
+| | |
+|---|---|
+| **Target** | Xiaomi Global UBL ticket, `00:00:00 CST` daily reset |
+| **Platform** | Android / Termux (one file, no root) |
+| **License** | GPL-3.0 |
+| **Author** | Ds Project |
 
 ---
 
-## Why phone, not PC
+## 📸 Preview
+
+Output from a real `keris-test` run (fake token, safe):
+
+![KERIS terminal output](assets/preview-terminal.png)
+
+**Measured result:** first shot lands **−2 ms** before the boundary, 64/64
+requests reach the server.
+
+---
+
+## ⚡ Features
+
+| | Feature | What it does |
+|---|---|---|
+| 🎭 | **Doppelganger** | Header order and fingerprint match the real Mi Community app (`okhttp/4.12.0`, same field order) |
+| 🦎 | **Chameleon** | Generates a 40-hex `deviceId` per lane, taken from a real capture — not the 39-hex guess |
+| ⚡ | **Gungnir** | Raw HTTP/1.1 socket, no library overhead — 32 requests pipelined down one TLS connection |
+| ⏱️ | **Chronobreak** | NTP-synced clock on `perf_counter`, re-synced without jumps |
+| 🎯 | **Volley** | Offset recomputed from a **live RTT** right before firing — lands −1..−5 ms, not −45 ms guesswork |
+| 🛡️ | **Oracle** | NTP samples filtered: offsets beyond ±5 s or delays outside 0–2 s are dropped before they can shift the clock |
+| 🌐 | **Wanderer** | Tests each CDN IP first; drops endpoints that close the connection after one response |
+| 🐢 | **Tortoise** | Measures the network and shrinks the shot count on slow links, instead of spamming into a closed gate |
+| 🗣️ | **Bilingual** | English / Indonesian, asked once on first run, saved to `~/.config/keris/lang` |
+
+---
+
+## 📍 Why phone, not PC
 
 Quota opens at exactly `00:00:00 CST` (Beijing) = `23:00:00 WIB`. The winner is
 not the fastest code — it is whoever's packet **arrives first**.
 
 | From | RTT to server (Singapore) | Odds |
 |---|---|---|
-| Phone in Indonesia, 4G | ~40 ms | best |
-| EU VPS | ~166 ms | loses 126 ms |
-| Home WiFi | ~20-60 ms | fine |
+| 📱 Phone in Indonesia, 4G | ~40 ms | best |
+| 🖥️ EU VPS | ~166 ms | loses 126 ms |
+| 🏠 Home WiFi | ~20-60 ms | fine |
 
 Xiaomi's global API sits in Singapore. From Indonesia the path is short. From
 Europe no code trick closes 126 ms.
 
 ---
 
-## Install
+## 🛠️ Install
 
 ### 1. Termux
 
@@ -109,7 +130,7 @@ keris-update
 
 ---
 
-## Use
+## 🚀 Use
 
 ### Check the token first
 
@@ -152,7 +173,7 @@ Fake token, does not touch the server. Confirms timing works on your phone.
 
 ---
 
-## Options
+## ⚙️ Options
 
 ```
 --tusukan N       shots per lane
@@ -168,7 +189,7 @@ Fake token, does not touch the server. Confirms timing works on your phone.
 
 ---
 
-## How it works
+## 🔬 How it works
 
 **1. Precise clock.** NTP against `time.google.com`. Phone clocks are routinely
 200-700 ms off — enough to lose before you start. KERIS measures the offset and
@@ -190,7 +211,7 @@ seconds, in case quota opens gradually.
 
 ---
 
-## Slow networks
+## 🐢 Slow networks
 
 KERIS measures the rate before firing. If 32 shots would take more than 300 ms,
 it shrinks the count so they all land:
@@ -206,7 +227,7 @@ already took the quota — that is spam, not sniping.
 
 ---
 
-## Endpoints that cannot pipeline
+## 🌐 Endpoints that cannot pipeline
 
 Xiaomi runs several CDNs. European endpoints (`ams.aznl.pubproxy.lb.mi.com`,
 IPs `20.157.x` / `20.47.x`) **close the connection after one response**, so
@@ -225,7 +246,7 @@ drops what fails.
 
 ---
 
-## Getting a token
+## 🔑 Getting a token
 
 The token is the `new_bbs_serviceToken` cookie from the Mi Community app. It is
 valid for **one day**, so capture it on the day.
@@ -286,7 +307,7 @@ are always: install CA → capture → copy the `Cookie:` line of the
 
 ---
 
-## Response codes
+## 📊 Response codes
 
 State (`bl-switch/state`):
 
@@ -312,7 +333,7 @@ on the phone.
 
 ---
 
-## After you get the ticket
+## 🏁 After you get the ticket
 
 Permission is **not** active yet:
 
@@ -333,7 +354,7 @@ During those 7 days: **no factory reset**, **no signing out the Xiaomi account**
 
 ---
 
-## Files
+## 📁 Files
 
 ```
 keris.py     the sniper
@@ -352,7 +373,7 @@ Internal modules:
 
 ---
 
-## Technical notes
+## 🧪 Technical notes
 
 - **Cookie** stays URL-encoded. Do not decode it.
 - **deviceId** is 40 hex, generated per lane. The server does not validate it
@@ -368,7 +389,7 @@ Internal modules:
 
 ---
 
-## Limits
+## ⚠️ Limits
 
 - Needs Python 3.6+ (stdlib only, no `pip install`).
 - Tested on Android 16/Termux. Android 7-15 not tested on real hardware, but no
@@ -385,7 +406,7 @@ Internal modules:
 
 ---
 
-## License
+## 📜 License
 
 **GPL-3.0** — see `LICENSE`. Copyright (C) 2026 Ds Project.
 
@@ -423,7 +444,7 @@ Redmi Note 13 Pro 5G / Telkomsel LTE.
 
 ---
 
-## Bahasa Indonesia
+## 🇮🇩 Bahasa Indonesia
 
 Installer dan script menanyakan bahasa sekali di awal — pilih `2` untuk
 Indonesia. Semua output, help, dan prompt ikut bahasa itu. Ganti kapan saja

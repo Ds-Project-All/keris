@@ -81,6 +81,7 @@ C_RST = "\033[0m"
 _lock = threading.Lock()
 _cliset = 0          # bitmask: 1 = --tusukan dipakai, 2 = --susulan dipakai
 _DEV_RE = re.compile(r"deviceId=[^;]*")
+_countdown_shown = [False]   # hanya satu thread mencetak hitung mundur
 
 
 def _cliset_add(n):
@@ -706,16 +707,25 @@ def next_beijing_midnight():
 
 
 def countdown(clock, label, target):
-    while True:
-        rem = target - clock.now()
-        if rem <= 0:
-            break
-        h, r = divmod(int(rem), 3600)
-        m, s = divmod(r, 60)
-        print(f"\r{C_INFO}{'[tunggu]':<12}{C_RST} {label} {h:02d}:{m:02d}:{s:02d}    ",
-              end="", flush=True)
-        time.sleep(0.05)
-    print()
+    """Hitung mundur. Ditulis dari beberapa thread, tapi hanya satu yang
+    benar-benar mencetak; sisanya cuma memastikan angka terakhir (00:00:00)
+    sempat muncul."""
+    with _lock:
+        if _countdown_shown[0]:
+            return                      # sudah dicetak thread lain
+        _countdown_shown[0] = True
+    try:
+        while True:
+            remain = target - clock.now()
+            if remain <= 0:
+                break
+            h, m, s = int(remain // 3600), int(remain % 3600 // 60), int(remain % 60)
+            print(f"\r{T('tunggu'):<12} {label} {h:02d}:{m:02d}:{s:02d}    ",
+                  end="", flush=True)
+            time.sleep(min(0.5, max(0.05, remain)))
+        print(f"\r{T('tunggu'):<12} {label} 00:00:00    ")
+    finally:
+        _countdown_shown[0] = False
 
 
 def ask(prompt, default):

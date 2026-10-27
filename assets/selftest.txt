@@ -1,0 +1,42 @@
+==========================================================
+
+  KERIS — UBL ticket sniper   keris 1.0
+
+  by Ds Project
+
+==========================================================
+
+
+
+dns          sgp-api.buy.mi.com -> 43.98.171.210, 47.236.122.116, 47.236.97.63, 47.237.204.32
+
+ntp          offset +376.0 ms (delay 27.1, time.google.com)
+
+test         fake token — mechanics & timing only
+
+lane         4/4 ready (1 account(s))
+
+measure      6.6 ms/req -> 16 shots cover 106 ms
+
+test         target 20:30:03.260
+
+
+
+snipe        fire offset -47 ms (RTT 39 ms)
+
+snipe        4 lanes x 16 = 64 shots
+
+snipe        fire -47 ms before boundary, each lane covers 106 ms
+
+fire         47.236.97.63 6128B @ 20:30:03.219
+
+fire         47.237.204.32 6128B @ 20:30:03.219
+
+fire         43.98.171.210 6128B @ 20:30:03.219
+
+fire         47.236.122.116 6128B @ 20:30:03.219
+
+test         64 responses, 64 reached server
+
+test         responses -1 .. +123 ms from target
+

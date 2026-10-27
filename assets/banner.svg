@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="210" viewBox="0 0 820 210">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="100%" stop-color="#161b22"/>
+    </linearGradient>
+    <linearGradient id="blade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#f85149"/>
+      <stop offset="55%" stop-color="#ffa657"/>
+      <stop offset="100%" stop-color="#58a6ff"/>
+    </linearGradient>
+    <pattern id="grid" width="26" height="26" patternUnits="userSpaceOnUse">
+      <path d="M26 0H0V26" fill="none" stroke="#21262d" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="820" height="210" rx="14" fill="url(#bg)"/>
+  <rect width="820" height="210" rx="14" fill="url(#grid)" opacity="0.55"/>
+
+  <!-- garis bilah ala target -->
+  <rect x="0" y="96" width="820" height="2" fill="#f85149" opacity="0.85"/>
+  <text x="770" y="86" font-family="Consolas,monospace" font-size="12"
+        fill="#f85149" text-anchor="end" opacity="0.9">00:00:00 CST · 23:00 WIB</text>
+
+  <!-- ikon bilah -->
+  <g transform="translate(38,52)">
+    <rect x="0" y="26" width="9" height="62" rx="4" fill="url(#blade)"/>
+    <circle cx="4.5" cy="20" r="5" fill="#58a6ff"/>
+    <path d="M4.5 2 L4.5 -12" stroke="#58a6ff" stroke-width="2.5"/>
+    <path d="M-4 6 L4.5 -4 L13 6" fill="none" stroke="#ffa657" stroke-width="2.5"/>
+  </g>
+
+  <text x="86" y="80" font-family="Consolas,'Cascadia Mono',monospace"
+        font-size="46" font-weight="bold" fill="#f0f6fc" letter-spacing="4">KERIS</text>
+  <text x="90" y="112" font-family="Consolas,monospace" font-size="17"
+        fill="#8b949e">Xiaomi bootloader-unlock ticket sniper · Android</text>
+  <text x="90" y="140" font-family="Consolas,monospace" font-size="15"
+        fill="#7ee787">single file · stdlib only · no root · EN / ID</text>
+
+  <text x="790" y="182" font-family="Consolas,monospace" font-size="12"
+        fill="#484f58" text-anchor="end">by Ds Project</text>
+</svg>
