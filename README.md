@@ -13,6 +13,8 @@ test         64 responses, 64 reached server
 test         responses +0 .. +89 ms from target
 ```
 
+> **Status: Production Ready.** GPL-3.0. See [License](#license).
+
 ---
 
 ## Why phone, not PC
@@ -333,7 +335,30 @@ Internal modules:
 
 ## License
 
-MIT — see `LICENSE`. Copyright (c) 2026 Ds Project.
+**GPL-3.0** — see `LICENSE`. Copyright (C) 2026 Ds Project.
+
+### Attribution
+
+KERIS was built by measuring the protocol itself, not by copying code. The
+starting reference was [mchrbl-cli](https://github.com/ProjectRedis/mchrbl-cli)
+(`herorbl.py`, GPL-3.0): it showed which endpoint the Mi Community app calls and
+which headers it sends. KERIS is GPL-3.0 for that reason.
+
+Measured against that reference — 1093 vs 968 lines, and only **49 lines
+identical**, of which 20 are `import` statements and 5 are HTTP header names.
+Both programs imitate the same official app, so those parts cannot differ.
+
+Where KERIS differs in substance:
+
+| | herorbl | KERIS |
+|---|---|---|
+| Connections | one per request, `Connection: close` | keep-alive, 32 requests pipelined per socket |
+| Timing | fixed offset + random jitter 1-8 ms | offset recomputed from live RTT right before firing |
+| `deviceId` | 39 hex (too short) | 40 hex, taken from a real capture |
+| `is_retry` | `false` on wave 1 | always `true`, as the app sends |
+| Network awareness | none | shrinks shot count on slow links, filters CDN endpoints that cannot pipeline |
+| Dependencies | `requests`, `colorama`, `ntplib` | stdlib only |
+| Language | one | English + Indonesian, chosen on first run |
 
 Built from public protocol research. Every timing number was measured on a
 Redmi Note 13 Pro 5G / Telkomsel LTE.
