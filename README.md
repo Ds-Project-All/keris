@@ -42,7 +42,7 @@ build is out of date and `pkg install` fails there.
 ### 2. One command
 
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/dhimesta090418-crypto/keris/main/install.sh)
+bash <(curl -s https://raw.githubusercontent.com/Ds-Project-All/keris/main/install.sh)
 ```
 
 The installer does everything: installs `python` if missing, downloads

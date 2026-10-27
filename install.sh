@@ -2,7 +2,7 @@
 # keris — pemasang satu perintah untuk Termux
 set -eu
 
-RAW=https://raw.githubusercontent.com/dhimesta090418-crypto/keris/main
+RAW=https://raw.githubusercontent.com/Ds-Project-All/keris/main
 DIR=$HOME/keris
 PY=$DIR/keris.py
 BIN=${PREFIX:-/data/data/com.termux/files/usr}/bin
