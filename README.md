@@ -1,119 +1,89 @@
 # KERIS
 
-Presisi sergap tiket Unlock Bootloader Xiaomi (HyperOS / Mi Community Global)
-**dari HP Android**. Tanpa PC, tanpa root, tanpa `pip install`.
-
-Satu perintah, 128 tusukan dalam ~200 ms, dijadwalkan ke milidetik batas
-`00:00:00 CST` (23:00:00 WIB).
+Xiaomi bootloader-unlock (UBL) ticket sniper for Android. Single file, stdlib
+only, no root. **by Ds Project**
 
 ```
-==========================================================
-  KERIS — presisi sergap tiket UBL   keris 1.0
-==========================================================
-
-[dns]        sgp-api.buy.mi.com -> 43.98.171.210, 47.236.122.116, ...
-[ntp]        selisih +251.2 ms (tunda 30.0, id.pool.ntp.org)
-[masuk]      Token A (kosong = lewat):
-[periksa]    Token A: siap sergap
-[laras]      4/4 siap (1 akun)
-[ukur]       5.3 ms/req -> 32 tusukan menutup 170 ms
-[sinkron]    selisih akhir +243.1 ms (tunda 33.7), koreksi +0.4 ms
-[sergap]     4 laras x 32 = 128 tusukan
-[tusuk]      47.236.122.116 18048B @ 23:59:59.961
-[putusan]    TIKET DIDAPAT via 47.236.122.116 (sergap) @ 00:00:02.859
+dns          sgp-api.buy.mi.com -> 47.236.122.116, 43.98.171.210, ...
+ntp          offset +263.8 ms (delay 34.3, time.google.com)
+lane         4/4 ready (1 account)
+measure      5.3 ms/req -> 32 shots cover 169 ms
+snipe        4 lanes x 32 = 128 shots
+test         64 responses, 64 reached server
+test         responses +0 .. +89 ms from target
 ```
 
-## Kenapa beda
+---
 
-Bot UBL biasa menembak 4–6 request dalam bracket simetris ±70 ms. Setengahnya
-mendarat **sebelum** batas dan otomatis gagal. KERIS memakai data ukur:
+## Why phone, not PC
 
-| Yang diukur | Hasil | Kenapa penting |
+Quota opens at exactly `00:00:00 CST` (Beijing) = `23:00:00 WIB`. The winner is
+not the fastest code — it is whoever's packet **arrives first**.
+
+| From | RTT to server (Singapore) | Odds |
 |---|---|---|
-| Tunda maju (kirim → server) | 25–55 ms | Bukan `RTT/2`. Salah di sini = telat 100 ms |
-| Laju pipeline | 4.9–10.9 ms/req | 32 request menutup 170–350 ms jendela |
-| HTTP/1.1 vs HTTP/2 | h1 +95 ms, h2 +124 ms | h1 menang 30 ms untuk sergap |
-| Keep-alive mati | 10–20 s menganggur | Laras dipanaskan ulang tiap 6 s |
-| Batas laju | tidak ada (256 pipeline) | Aman kirim banyak sekaligus |
-| Mendarat di −45 ms | 100% (24/24) | Selisih terpilih |
+| Phone in Indonesia, 4G | ~40 ms | best |
+| EU VPS | ~166 ms | loses 126 ms |
+| Home WiFi | ~20-60 ms | fine |
 
-Tabel landing yang dipakai memilih `-45 ms`:
+Xiaomi's global API sits in Singapore. From Indonesia the path is short. From
+Europe no code trick closes 126 ms.
 
-| Offset | Mendarat setelah batas |
-|---|---|
-| −120 ms | 58% |
-| −90 ms | 75% |
-| −60 ms | 96% |
-| **−45 ms** | **100%** |
+---
 
-Bracket simetris membuang separuh percobaan. KERIS hanya menembak ke depan.
-
-## Pasang
+## Install
 
 ### 1. Termux
 
-Ambil dari [F-Droid](https://f-droid.org/packages/com.termux/) atau
-[GitHub release](https://github.com/termux/termux-app/releases). Versi Play
-Store sudah usang dan `pkg install` di sana gagal.
+Get it from [F-Droid](https://f-droid.org/packages/com.termux/) or
+[GitHub release](https://github.com/termux/termux-app/releases). The Play Store
+build is out of date and `pkg install` fails there.
 
-### 2. Satu perintah
-
-Buka Termux, lalu:
+### 2. One command
 
 ```bash
 bash <(curl -s https://raw.githubusercontent.com/dhimesta090418-crypto/keris/main/install.sh)
 ```
 
-Installer mengurus semuanya: memasang `python` kalau belum ada, mengunduh
-`keris.py` ke `~/keris/`, memasang perintah `keris`, dan mengaktifkan
-wake-lock. Di akhir ia menjalankan `keris.py --versi` — kalau gagal, ia bilang
-GAGAL dan berhenti.
+The installer does everything: installs `python` if missing, downloads
+`keris.py` and `i18n.py` to `~/keris/`, puts the `keris` command on your PATH,
+and turns on the wake-lock. At the end it runs `keris.py --versi` and stops with
+a clear error if that fails.
 
-### 3. Tutup Termux, buka lagi
+### 3. Pick a language
 
-Alias baru terbaca saat shell dimulai ulang. Lalu:
+First run asks once — English or Indonesian — and remembers. Change any time:
 
 ```bash
-keris-cal      # ukur jaringan, sekali saja
-keris          # sergap
+keris --lang en     # or: keris --lang id
 ```
 
-### Perintah
+### Commands
 
-| Perintah | Fungsi |
+| Command | Does |
 |---|---|
-| `keris` | sergap penuh |
-| `keris-cal` | ukur laju jaringan |
-| `keris-cek` | cek token masih sah |
-| `keris-test` | latihan pakai token palsu |
-| `keris-update` | ambil versi terbaru |
+| `keris` | full snipe |
+| `keris-cal` | measure network rate |
+| `keris-cek` | check a token is valid |
+| `keris-test` | rehearsal with a fake token |
+| `keris-help` | full help |
+| `keris-update` | fetch the latest version |
 
-Tanpa alias: `python3 ~/keris/keris.py`
-
-### Kalau alias tidak muncul
-
-```bash
-source ~/.bashrc
-```
-
-Atau langsung: `python3 ~/keris/keris.py`
+Without the wrapper: `python3 ~/keris/keris.py`
 
 ### Wake-lock
 
-Installer menjalankan `termux-wake-lock` supaya Android tidak membekukan
-Termux saat menunggu 3 menit. Kalau `termux-api` belum terpasang, installer
-memperingatkan dan melanjutkan — tapi sebaiknya dipasang:
+The installer runs `termux-wake-lock` so Android does not freeze Termux during
+the 3-minute countdown. If `termux-api` is missing it warns and continues — but
+install it:
 
 ```bash
 pkg install termux-api
 ```
 
-Lalu pasang app **Termux:API** dari F-Droid, izinkan notifikasinya.
-
-Minimalnya, kalau tidak mau repot:
-
-- Settings → Apps → Termux → Battery → **Unrestricted**
-- Kunci Termux di recent apps
+Then install the **Termux:API** app from F-Droid and allow its notifications.
+At minimum: Settings → Apps → Termux → Battery → **Unrestricted**, and lock
+Termux in recents.
 
 ### Update
 
@@ -121,220 +91,260 @@ Minimalnya, kalau tidak mau repot:
 keris-update
 ```
 
-Atau:
+---
+
+## Use
+
+### Check the token first
 
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/dhimesta090418-crypto/keris/main/install.sh)
+keris-cek
 ```
 
-### Diuji di
+Paste the token. `state=4` or `ok` means it is alive.
 
-| Perangkat | Python | Hasil |
-|---|---|---|
-| Redmi Note 13 Pro 5G, Android 16, Termux | 3.14.8 | 64/64 tusukan, NTP +307.8 ms |
-| Windows 10 | 3.14.7 | 64/64 tusukan, NTP −38.5 ms |
-| Windows 10 | 3.11 | 64/64 tusukan (uji kompatibilitas) |
-| Ubuntu 24.04 | 3.12.3 | 64/64 tusukan, endpoint Eropa |
-
-Sintaks bersih untuk **Python 3.6+** — jalan di Android 7 ke atas. Tidak ada API
-yang berubah di rentang itu.
-
-Dari Indonesia DNS memberi endpoint Asia yang mendukung pipeline. Kalau DNS
-lokal memberi endpoint Eropa, `EXTRA_IPS` menambahkan A-record Asia sebagai
-cadangan, lalu disaring lagi.
-
-### Kalau endpoint tidak bisa pipeline
-
-Xiaomi memakai beberapa CDN. Endpoint Eropa (`ams.aznl.pubproxy.lb.mi.com`,
-IP `20.157.x` / `20.47.x`) **menutup koneksi setelah satu respons**, jadi
-pipelining tidak jalan di sana — 8 request hanya dibalas 1.
-
-KERIS mengukur ini otomatis sebelum sergap:
-
-```
-[laras]  dilewati (tidak bisa pipeline): 20.157.18.26 (0/2), 20.47.97.185 (0/2)
-[laras]  4/4 siap (1 akun)
-```
-
-Konsekuensinya: dari Eropa RTT ke Asia ~166 ms, dari Indonesia ~40 ms.
-**HP di Indonesia jalur tercepat.**
-
-### Kalau jaringan lambat
-
-KERIS mengukur laju sebelum sergap. Kalau 32 tusukan butuh lebih dari 300 ms,
-jumlahnya dikecilkan otomatis supaya semuanya mendarat:
-
-```
-[ukur]       150.2 ms/req -> 32 tusukan menutup 4805 ms
-[ukur]       jaringan lambat: tusukan 32 -> 2 (biar muat 300 ms)
-[AWAS]       150 ms/req terlalu lambat untuk rebutan kuota. Pakai WiFi atau 4G.
-```
-
-Di 150 ms/req, 32 tusukan butuh 4,8 detik. Tusukan ke-3 dan seterusnya mendarat
-setelah kuota diambil orang — itu spam, bukan sergap.
-
-## Ambil token
-
-Token = cookie `new_bbs_serviceToken` dari app Mi Community.
-
-1. Pasang sniffer: [PCAPdroid](https://play.google.com/store/apps/details?id=com.emanuelef.remote_capture),
-   [Proxyman](https://play.google.com/store/apps/details?id=com.proxyman.proxymanandroid),
-   atau [HTTP Toolkit](https://play.google.com/store/apps/details?id=tech.httptoolkit.android.v1).
-2. Buka **Mi Community** → tab **Me** → **Unlock bootloader**.
-3. Matikan sniffer, cari request:
-   ```
-   POST https://sgp-api.buy.mi.com/bbs/api/global/apply/bl-auth
-   ```
-4. Copy nilai `Cookie:` mulai dari `new_bbs_serviceToken=` sampai sebelum `;versionCode`.
-
-Kalau menu **Unlock bootloader** tidak muncul, ganti region app ke **Global**.
-
-**Penting:** matikan sniffer dan VPN sebelum menjalankan `keris.py`. VPN lokal
-menambah 50–150 ms dan membunuh seluruh presisi.
-
-## Pakai
-
-| Perintah | Fungsi |
-|---|---|
-| `python keris.py` | sergap penuh (tanya token + parameter) |
-| `python keris.py --verify` | cek token masih sah, tanpa nunggu |
-| `python keris.py --calibrate` | ukur laju pipeline + RTT sekarang |
-| `python keris.py --selftest` | latihan mekanik pakai token palsu |
-| `python keris.py --help` | daftar semua opsi |
-
-### Opsi lanjutan
-
-| Flag | Default | Arti |
-|---|---|---|
-| `--fire-ms MS` | `-45` | tusuk sekian ms sebelum batas |
-| `--tusukan N` | `32` | tusukan per laras |
-| `--susulan DETIK` | `15` | susulan setelah sergap, `0` = mati |
-| `--versi` | — | cetak versi |
-
-Kalau `--tusukan` atau `--susulan` dipakai, prompt-nya dilewati:
+### Measure the network
 
 ```bash
-python keris.py --tusukan 48 --susulan 30
+keris-cal
 ```
 
-### Alur malam H
+```
+measure      5.3 ms/req -> 32 shots cover 169 ms
+```
+
+Above 60 ms/req, switch to WiFi or 4G.
+
+### Snipe
 
 ```bash
-termux-wake-lock          # sekali, cegah Android freeze
-python keris.py --verify  # 22:57 — pastikan "siap sergap"
-python keris.py           # 22:58 — tempel token, Enter, Enter
+keris
 ```
 
-`--verify` aman dijalankan kapan saja. Tidak makan kuota, tidak mengubah state.
+Asks for shots per lane (Enter = 32) and follow-up seconds (Enter = 15), then
+counts down and fires on its own.
 
-### Start jam berapa
+**Start 22:57-22:59 WIB.** Earlier risks Android killing Termux mid-wait.
 
-KERIS selalu mengejar `00:00:00 CST` **berikutnya**. Lewat 23:00 WIB sedikit
-saja = lompat ke besok.
+### Rehearse first
 
-| Start (WIB) | Nunggu | Catatan |
-|---|---|---|
-| 22:50 | 10 menit | aman |
-| **22:57** | **3 menit** | **disarankan** |
-| 22:59:30 | 30 detik | aman |
-| 23:00 | 24 jam | lewat |
+```bash
+keris-test
+```
 
-Batas bawah teknis ~5 detik (persiapan laras + kalibrasi). Jangan lebih mepet —
-kamu masih harus mengetik token.
+Fake token, does not touch the server. Confirms timing works on your phone.
 
-Nunggu >2 jam memicu peringatan + konfirmasi, karena risiko Android membunuh
-Termux, HP restart, atau sinyal hilang jauh lebih besar daripada manfaatnya.
+---
 
-## Arti kode
+## Options
+
+```
+--tusukan N       shots per lane
+--susulan SEC     follow-up after snipe, 0=off
+--fire-ms MS      fire this many ms before the boundary
+--lang en|id      switch language
+--verify          check token
+--calibrate       measure network
+--selftest        rehearsal
+--versi           print version
+--help            full help
+```
+
+---
+
+## How it works
+
+**1. Precise clock.** NTP against `time.google.com`. Phone clocks are routinely
+200-700 ms off — enough to lose before you start. KERIS measures the offset and
+runs on `perf_counter` so system clock changes cannot move the schedule.
+
+**2. Fire before the boundary.** Measured on-device: forward delay (`send()` to
+server) is **25-55 ms**, not half the RTT. Firing at 00:00:00 lands 45 ms late,
+so KERIS fires **45 ms early** and the first packet lands just after the gate.
+
+**3. Pipeline, not sequential.** One TLS connection carries many requests at
+once. Measured: **4.9-10.9 ms per request** when pipelined. 32 requests cover
+~170 ms. A fresh connection per request costs 80-120 ms in handshake alone.
+
+**4. Multiple lanes.** One connection per server IP (4 IPs = 4 connections). One
+lane hitting a 429 does not stop the others.
+
+**5. Follow-up.** After the first wave, KERIS keeps firing every ~300 ms for 15
+seconds, in case quota opens gradually.
+
+---
+
+## Slow networks
+
+KERIS measures the rate before firing. If 32 shots would take more than 300 ms,
+it shrinks the count so they all land:
+
+```
+measure      150.2 ms/req -> 32 shots cover 4805 ms
+measure      slow network: shots 32 -> 2 (fit 300 ms)
+WARNING      150 ms/req too slow to win quota. Use WiFi or 4G.
+```
+
+At 150 ms/req, 32 shots take 4.8 seconds. Shot 3 onward lands after someone
+already took the quota — that is spam, not sniping.
+
+---
+
+## Endpoints that cannot pipeline
+
+Xiaomi runs several CDNs. European endpoints (`ams.aznl.pubproxy.lb.mi.com`,
+IPs `20.157.x` / `20.47.x`) **close the connection after one response**, so
+pipelining is dead there — 8 requests get 1 reply.
+
+KERIS tests this automatically before firing:
+
+```
+lane         skipped (no pipelining): 20.157.18.26 (0/2), 20.47.97.185 (0/2)
+lane         4/4 ready (1 account)
+```
+
+From Indonesia DNS returns Asian endpoints that do pipeline. If local DNS hands
+out European ones, `EXTRA_IPS` adds Asian A-records as fallback and the filter
+drops what fails.
+
+---
+
+## Getting a token
+
+The token is the `new_bbs_serviceToken` cookie from the Mi Community app. It is
+valid for **one day**, so capture it on the day.
+
+1. Phone must already be logged in to **Mi Community** (`com.mi.global.bbs`).
+2. Install **PCAPdroid** from Play Store.
+3. PCAPdroid → Settings → **HTTPS decryption** → **Install CA certificate**.
+4. PCAPdroid → Settings → **Target apps** → tick **Mi Community** only.
+5. Start capture, open the app → **Profile** → **Unlock Bootloader**.
+6. Stop, find `POST https://sgp-api.buy.mi.com/bbs/api/global/apply/bl-auth`.
+7. Copy the whole **Cookie** line.
+
+KERIS only needs the `new_bbs_serviceToken=...` part — `versionCode` and
+`deviceId` are rebuilt automatically. Pasting the whole line is also fine.
+
+If the **Unlock bootloader** menu is missing, set the app region to **Global**.
+
+**Turn off PCAPdroid and any VPN before firing.** A local VPN adds 50-150 ms and
+destroys the precision.
+
+---
+
+## Response codes
 
 State (`bl-switch/state`):
 
-| `is_pass` / `button_state` | Arti |
+| `is_pass` / `button_state` | Meaning |
 |---|---|
-| `1` / – | Sudah punya izin |
-| `4` / `1` | Siap sergap |
-| `4` / `2` | Diblokir sampai `deadline` |
-| `4` / `3` | Akun < 30 hari |
+| `1` / – | Already permitted |
+| `4` / `1` | Ready to snipe |
+| `4` / `2` | Blocked until `deadline` |
+| `4` / `3` | Account younger than 30 days |
 
 Apply (`apply/bl-auth`):
 
-| `apply_result` | Arti |
+| `apply_result` | Meaning |
 |---|---|
-| `1` | **Disetujui** — `deadline` ~1 tahun |
-| `2` | Sudah punya / error akun |
-| `3` | Kuota habis — `deadline` besok |
-| `6` | Server sibuk |
+| `1` | **Approved** — `deadline` ~1 year |
+| `2` | Already held / account error |
+| `3` | Quota gone — `deadline` tomorrow |
+| `6` | Server busy |
 
-`apply_result: 3` bisa muncul walau backend sudah menyetujui ("silent
-approval"). Kalau tusukan mendarat di detik pembukaan, cek efeknya — tautkan akun
-di HP. Kalau bind berhasil, izin benar-benar ada.
+`apply_result: 3` can appear even when the backend already approved ("silent
+approval"). If a shot lands in the opening second, check by binding the account
+on the phone.
 
-## Setelah dapat tiket
+---
 
-Izin **tidak** langsung aktif. Urutannya:
+## After you get the ticket
 
-1. **Di HP** — Developer options → Status Mi Unlock → **Tambah akun dan perangkat**.
-   Syarat: **WiFi mati, data seluler nyala**, SIM dengan kuota data tersisa.
-   Berhasil kalau muncul *"Berhasil ditambahkan"*.
-2. **Di PC** — unduh [Mi Unlock Tool](https://unlock.update.miui.com), login
-   akun Xiaomi yang **sama**.
-3. HP ke **fastboot** (Volume Down + Power), sambung USB, klik **Unlock**.
-4. Kemungkinan besar muncul *"Couldn't unlock. Please unlock 168 hours later"*.
-   **Normal.** Tunggu 7 hari, ulangi langkah 3–4.
+Permission is **not** active yet:
 
-Selama 7 hari itu: **jangan factory reset**, **jangan sign out akun Xiaomi**,
-**jangan lepas SIM lama**. Salah satu = timer 168 jam reset.
+1. **On the phone** — Developer options → Status Mi Unlock → **Add account and
+   device**. Requires **WiFi off, mobile data on**, SIM with data left. Success
+   shows *"Added successfully"*.
+2. **On a PC** — download [Mi Unlock Tool](https://unlock.update.miui.com), sign
+   in with the **same** Xiaomi account.
+3. Phone to **fastboot** (Volume Down + Power), plug in USB, click **Unlock**.
+4. Expect *"Couldn't unlock. Please unlock 168 hours later"*. **Normal.** Wait 7
+   days, repeat steps 3-4.
 
-> Unlock bootloader **menghapus seluruh data HP**. Backup sebelum klik Unlock.
-> "Cari perangkat" tidak berfungsi lagi setelah bootloader terbuka.
+During those 7 days: **no factory reset**, **no signing out the Xiaomi account**,
+**no removing the old SIM**. Any of those resets the 168-hour timer.
 
-## Struktur
+> Unlocking the bootloader **wipes the phone**. Back up before clicking Unlock.
+> "Find device" stops working once the bootloader is open.
+
+---
+
+## Files
 
 ```
-keris.py     satu file, tanpa dependensi di luar stdlib
+keris.py     the sniper
+i18n.py      English + Indonesian strings
+install.sh   Termux installer
 ```
 
-Modul internal:
+Internal modules:
 
-| Bagian | Fungsi |
+| Part | Job |
 |---|---|
-| `Clock` | jam NTP + `perf_counter`, bisa re-sync tanpa lompat |
-| `Laras` | satu socket TLS, dipanaskan dulu, kirim sergap |
-| `Sergap` | orkestrasi 4 laras, kalibrasi, laporan |
-| `ntp_query` / `best_ntp` | sampel delay terendah, dibatasi deadline |
+| `Clock` | NTP clock on `perf_counter`, re-sync without jumps |
+| `Laras` | one TLS socket, pre-warmed, fires the burst |
+| `Sergap` | owns the lanes, calibrates, reports |
+| `ntp_query` / `best_ntp` | lowest-delay sample under a deadline |
 
-## Catatan teknis
+---
 
-- **Cookie** dibiarkan URL-encoded. Jangan di-decode.
-- **deviceId** 40 hex, dibuat per laras. Server tidak memvalidasinya
-  (diuji: ID asli, ID acak, tanpa ID — semua 200).
-- **ALPN** dipaksa `http/1.1`. HTTP/2 butuh `:authority`, bukan `host`, kalau
-  tidak → 400.
-- **NTP** dibatasi `budget_s`. Tanpa itu, satu server mati = 2 s timeout ×
-  sembilan ronde = 6.9 s terbuang tepat sebelum tusukan.
-- **Resync final** dilewati kalau sisa waktu < 2.5 s.
-- **Sampel NTP disaring**: offset di luar ±5 s atau delay di luar 0–2 s
-  dibuang. Tanpa ini satu paket korup bisa menggeser jam 126 tahun dan
-  membuat seluruh jadwal meleset.
+## Technical notes
 
-## Batasan
+- **Cookie** stays URL-encoded. Do not decode it.
+- **deviceId** is 40 hex, generated per lane. The server does not validate it
+  (tested: real ID, random ID, no ID — all 200).
+- **ALPN** is forced to `http/1.1`. HTTP/2 needs `:authority` instead of `host`
+  and 400s otherwise.
+- **NTP** is capped by `budget_s`. Uncapped, one dead server at 2 s timeout times
+  nine rounds burns 6.9 s right before the shot.
+- **Final resync** is skipped when under 2.5 s remain.
+- **NTP samples are filtered**: offsets beyond ±5 s or delays outside 0-2 s are
+  dropped. Without it one corrupt packet shifted the clock 126 years and ruined
+  the whole schedule.
 
-- Butuh Python 3.6+ (stdlib saja, tanpa `pip install`).
-- Diuji langsung di Android 16/Termux. Android 7–15 belum diuji di perangkat
-  nyata, tapi tidak ada API yang berubah di rentang itu.
-- Lokasi menentukan hasil. Dari Indonesia RTT ~40 ms; dari Eropa ~166 ms dan
-  endpoint CDN-nya tidak mendukung pipelining. **HP di Indonesia jalur
-  tercepat** — PC/VPS cuma cadangan.
-- Kuota harian bisa habis dalam <50 ms. 128 tusukan dalam 200 ms sudah maksimal;
-  kalau ada ribuan pesaing, yang menang tetap jalur terdekat ke Singapura.
-- Jaringan di bawah 60 ms/req (3G/2G) hampir pasti kalah — KERIS akan
-  memperingatkan, bukan diam-diam gagal.
-- Token berlaku satu hari.
-- Endpoint bisa ditambal Xiaomi kapan saja.
+---
 
-## Lisensi
+## Limits
 
-MIT — lihat [LICENSE](LICENSE).
+- Needs Python 3.6+ (stdlib only, no `pip install`).
+- Tested on Android 16/Termux. Android 7-15 not tested on real hardware, but no
+  API changed across that range.
+- Location decides the outcome. From Indonesia RTT is ~40 ms; from Europe
+  ~166 ms and its CDN endpoints cannot pipeline. **A phone in Indonesia is the
+  fastest path** — a PC/VPS is only a spare.
+- Daily quota can vanish in under 50 ms. 128 shots in 200 ms is already max; with
+  thousands of competitors, the closest path to Singapore still wins.
+- Networks under 60 ms/req (3G/2G) almost always lose — KERIS warns instead of
+  failing silently.
+- Tokens last one day.
+- Xiaomi can patch the endpoint any time.
 
-Dibangun dari riset protokol publik. Angka timing diukur sendiri di
+---
+
+## License
+
+MIT — see `LICENSE`. Copyright (c) 2026 Ds Project.
+
+Built from public protocol research. Every timing number was measured on a
 Redmi Note 13 Pro 5G / Telkomsel LTE.
+
+---
+
+## Bahasa Indonesia
+
+Installer dan script menanyakan bahasa sekali di awal — pilih `2` untuk
+Indonesia. Semua output, help, dan prompt ikut bahasa itu. Ganti kapan saja
+dengan `keris --lang id` atau `keris --lang en`.
+
+Panduan lengkap berbahasa Indonesia ada di dalam `keris-help` setelah installer
+selesai.

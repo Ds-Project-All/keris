@@ -54,6 +54,7 @@ put keris
 put keris-cek --verify
 put keris-cal --calibrate
 put keris-test --selftest
+put keris-help --help
 
 # keris-update tidak menjalankan python: ia menjalankan pemasang lagi
 cat > "$BIN/keris-update" <<EOF
