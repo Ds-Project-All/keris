@@ -50,23 +50,31 @@ Bracket simetris membuang separuh percobaan. KERIS hanya menembak ke depan.
 
 ## Pasang
 
-Satu file, tanpa dependensi di luar stdlib. Python 3.6+.
+**Satu perintah di Termux:**
 
-**Semua langkah di bawah dikerjakan di HP.** Tidak butuh PC, tidak butuh root.
+```bash
+curl -fsSL https://raw.githubusercontent.com/dhimesta090418-crypto/keris/main/install.sh | bash
+```
 
-### 1. Termux
+Selesai. Installer memasang `python` kalau belum ada, mengunduh `keris.py`
+ke `~/keris/`, dan memeriksa hasilnya benar-benar jalan sebelum bilang sukses.
+
+Kalau lebih suka manual:
+
+```bash
+pkg install python -y
+curl -fsSL -o ~/keris.py https://raw.githubusercontent.com/dhimesta090418-crypto/keris/main/keris.py
+chmod +x ~/keris.py
+python ~/keris.py --versi
+```
+
+### Kalau belum punya Termux
 
 Ambil dari [F-Droid](https://f-droid.org/packages/com.termux/) atau
 [GitHub release](https://github.com/termux/termux-app/releases). Versi Play
-Store sudah usang dan tidak bisa `pkg install`.
+Store sudah usang dan `pkg install` di sana gagal.
 
-### 2. Python
-
-```bash
-pkg update && pkg install python -y
-```
-
-### 3. Cegah Android membekukan Termux
+### Cegah Android membekukan Termux
 
 ```bash
 pkg install termux-api -y
@@ -81,20 +89,19 @@ Minimalnya, kalau tidak mau repot:
 - Settings → Apps → Termux → Battery → **Unrestricted**
 - Kunci Termux di recent apps
 
-### 4. Salin script
+### Update
 
 ```bash
-mkdir -p ~/keris && cd ~/keris
-# salin keris.py ke sini
-chmod +x keris.py
-python keris.py --versi
+curl -fsSL https://raw.githubusercontent.com/dhimesta090418-crypto/keris/main/install.sh | bash
 ```
+
+Menimpa `keris.py` lama, menyimpan sisanya.
 
 ### Diuji di
 
 | Perangkat | Python | Hasil |
 |---|---|---|
-| Redmi Note 13 Pro 5G, Android 16, Termux | 3.14.8 | 64/64 tusukan, NTP +263.8 ms |
+| Redmi Note 13 Pro 5G, Android 16, Termux | 3.14.8 | 64/64 tusukan, NTP +309.6 ms |
 | Windows 10 | 3.14.7 | 64/64 tusukan, NTP −38.5 ms |
 | Windows 10 | 3.11 | 64/64 tusukan (uji kompatibilitas) |
 | Ubuntu 24.04 | 3.12.3 | 64/64 tusukan, endpoint Eropa |
