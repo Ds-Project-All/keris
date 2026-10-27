@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+*.token
+*.log
+.env
+tk.txt
