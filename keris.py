@@ -569,10 +569,9 @@ class Sergap:
     def _tune_fire(self):
         """Ukur RTT segar ke laras pertama, set offset tusuk seoptimal mungkin.
 
-        herorbl pakai offset tetap + jitter acak 1-8 ms. Di sini offset dihitung
-        dari RTT yang diukur detik itu juga: tusuk di -max(25, RTT/2) ms supaya
-        paket pertama mendarat tepat di batas. Kalau RTT berubah (sinyal naik
-        turun), offset ikut — tidak perlu tebak.
+        herorbl menyebar tembakan di bracket simetris (separuh mendarat sebelum
+        batas -> gagal), lalu menambah jitter acak 1-8 ms. Di sini tiap laras
+        hanya maju: tusukan pertama mendarat tepat di batas, sisanya menyusul.
         """
         if self.gap_ms > 20.0:
             return                      # jaringan lambat: biarkan -45 default

@@ -348,17 +348,23 @@ Measured against that reference — 1093 vs 968 lines, and only **49 lines
 identical**, of which 20 are `import` statements and 5 are HTTP header names.
 Both programs imitate the same official app, so those parts cannot differ.
 
-Where KERIS differs in substance:
+Both are raw-socket, stdlib-only, NTP-synced snipers. The differences are
+strategic:
 
 | | herorbl | KERIS |
 |---|---|---|
-| Connections | one per request, `Connection: close` | keep-alive, 32 requests pipelined per socket |
-| Timing | fixed offset + random jitter 1-8 ms | offset recomputed from live RTT right before firing |
-| `deviceId` | 39 hex (too short) | 40 hex, taken from a real capture |
-| `is_retry` | `false` on wave 1 | always `true`, as the app sends |
-| Network awareness | none | shrinks shot count on slow links, filters CDN endpoints that cannot pipeline |
-| Dependencies | `requests`, `colorama`, `ntplib` | stdlib only |
+| Attack shape | symmetric bracket around the boundary (offset −b..+b per hero, `BRACKET_FACTOR=0.8`) | forward-only, staggered after the boundary |
+| Connections | one fresh socket per shot, `Connection: close` | one keep-alive socket, 32 requests pipelined |
+| Timing | 5-ping weighted median before the run, then fixed offsets + random jitter 1-8 ms | recomputed from a live RTT right before firing; each lane fires forward |
+| Sweep window | half the shots land before the boundary and fail | nothing lands before the boundary by construction |
+| Network-aware | no | shrinks shot count on slow links, drops CDN endpoints that cannot pipeline |
+| `deviceId` | 39 hex | 40 hex, from a real capture |
 | Language | one | English + Indonesian, chosen on first run |
+
+**Why forward-only wins.** herorbl spreads offsets across the bracket — with the
+example `[-70, -23, 23, 70]` ms, half your shots sit *before* `00:00:00` and fail
+before the quota opens. KERIS fires the first shot to land `−1..−5 ms` before the
+boundary, then staggers the rest forward. Every KERIS shot has a chance.
 
 Built from public protocol research. Every timing number was measured on a
 Redmi Note 13 Pro 5G / Telkomsel LTE.
