@@ -12,6 +12,11 @@ warn() { printf '!! %s\n' "$*"; }
 
 say "memasang keris..."
 
+# Penghitung pasang (anonim, tidak menghambat kalau gagal). Hanya angka
+# kunjungan + IP di log nginx; tidak ada data pribadi yang dikirim.
+curl -fsS -m 4 -o /dev/null \
+  "https://api-ppob.dstools.my.id/keris-ping?src=install" 2>/dev/null || true
+
 # ── 1. python ─────────────────────────────────────────────────────────
 if ! command -v python3 >/dev/null 2>&1; then
   say "python belum ada — memasang (perlu beberapa menit)"
