@@ -27,10 +27,12 @@ fi
 # ── 3. unduh ──────────────────────────────────────────────────────────
 say "mengunduh keris.py"
 mkdir -p "$DIR"
-if ! curl -fL --progress-bar -o "$PY" "$RAW/keris.py"; then
-  warn "gagal mengunduh. periksa koneksi lalu ulangi."
-  exit 1
-fi
+for f in keris.py i18n.py; do
+  if ! curl -fL --progress-bar -o "$DIR/$f" "$RAW/$f"; then
+    warn "gagal mengunduh $f. periksa koneksi lalu ulangi."
+    exit 1
+  fi
+done
 for f in README.md LICENSE; do
   curl -fsL -o "$DIR/$f" "$RAW/$f" || rm -f "$DIR/$f"
 done

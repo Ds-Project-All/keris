@@ -40,6 +40,10 @@ import time
 import urllib.parse
 from datetime import datetime, timedelta, timezone
 
+import i18n
+
+T = i18n.tag
+
 VERSION = "keris 1.0"
 
 HOST = "sgp-api.buy.mi.com"
@@ -409,8 +413,8 @@ def filter_pipeline(ips, token, want=4):
         if len(good) >= want:
             break
     if bad:
-        out("[laras]", "dilewati (tidak bisa pipeline): "
-                       + ", ".join(f"{ip} ({n}/2)" for ip, n in bad), C_DIM)
+        out(T("lane"), i18n.t("lane_dilewati",
+                              ips=", ".join(f"{ip} ({n}/2)" for ip, n in bad)), C_DIM)
     return [ip for ip, _ in good]
 
 
@@ -521,7 +525,7 @@ class Sergap:
         # saring IP yang benar-benar bisa pipeline (CDN Xiaomi tidak seragam)
         usa = filter_pipeline(self.ips, tok)
         if not usa:
-            out("[laras]", "semua IP gagal tes pipeline", C_ERR)
+            out(T("lane"), i18n.t("lane_semua_gagal"), C_ERR)
             return
         for i, ip in enumerate(usa):
             tok = self.tokens[i % len(self.tokens)]
@@ -530,9 +534,9 @@ class Sergap:
                 g.warm(tok)
                 self.laras.append((g, tok))
             except Exception as e:
-                out("[laras]", f"{ip} gagal: {e}", C_ERR)
-        out("[laras]", f"{len(self.laras)}/{len(usa)} siap "
-                       f"({len(self.tokens)} akun)", C_OK)
+                out(T("lane"), i18n.t("lane_gagal", ip=ip, err=e), C_ERR)
+        out(T("lane"), i18n.t("lane_siap", n=len(self.laras),
+                              total=len(usa), acc=len(self.tokens)), C_OK)
 
     def calibrate(self):
         if not self.laras:
@@ -550,30 +554,29 @@ class Sergap:
         gaps.sort()
         if gaps:
             self.gap_ms = gaps[len(gaps) // 2]
-        out("[ukur]", f"{self.gap_ms:.1f} ms/req "
-                           f"-> {self.tusukan} tusukan menutup {self.tusukan*self.gap_ms:.0f} ms", C_OK)
+        out(T("ukur"), i18n.t("ukur_hasil", gap=self.gap_ms,
+                              n=self.tusukan, span=self.tusukan*self.gap_ms), C_OK)
         # jaringan lambat: tusukan yang mendarat dulu sudah mengambil kuota,
         # sisanya cuma spam. Kecilkan tusukan biar muat ~300 ms burst.
         # Minimum 2: satu tusukan tanpa cadangan kalah kalau kena 429.
         if self.tusukan * self.gap_ms > 300.0:
             old = self.tusukan
             self.tusukan = max(2, min(old, round(300.0 / self.gap_ms)))
-            out("[ukur]", f"jaringan lambat: tusukan {old} -> {self.tusukan} "
-                          f"(biar muat 300 ms)", C_WARN)
+            out(T("ukur"), i18n.t("ukur_lambat", old=old, new=self.tusukan), C_WARN)
             if self.gap_ms > 60.0:
-                out("[AWAS]", f"{self.gap_ms:.0f} ms/req terlalu lambat untuk "
-                              f"rebutan kuota. Pakai WiFi atau 4G.", C_ERR)
+                out(T("AWAS"), i18n.t("ukur_terlalu_lambat", gap=self.gap_ms), C_ERR)
 
     def run(self, target):
         if not self.laras:
-            out("[gagal]", "tidak ada laras hidup", C_ERR)
+            out(T("gagal"), i18n.t("lane_tidak_ada"), C_ERR)
             return
         base = target + self.fire_ms / 1000.0
         fire = [base + i * self.stagger for i in range(len(self.laras))]
-        out("[sergap]", f"{len(self.laras)} laras x {self.tusukan} = "
-                     f"{len(self.laras)*self.tusukan} tusukan", C_INFO)
-        out("[sergap]", f"tusuk {self.fire_ms} ms sebelum batas, "
-                     f"tiap laras menutup {self.tusukan*self.gap_ms:.0f} ms", C_INFO)
+        out(T("sergap"), i18n.t("sergap_rencana", lanes=len(self.laras),
+                                n=self.tusukan,
+                                total=len(self.laras)*self.tusukan), C_INFO)
+        out(T("sergap"), i18n.t("sergap_tusuk", fire=self.fire_ms,
+                                span=self.tusukan*self.gap_ms), C_INFO)
 
         threads = [threading.Thread(target=self._shoot, args=(g, tok, ft), daemon=True)
                    for (g, tok), ft in zip(self.laras, fire)]
@@ -592,15 +595,15 @@ class Sergap:
         try:
             gun.fire(blob)
         except Exception as e:
-            out("[tusuk]", f"{gun.ip} gagal: {e}", C_ERR)
+            out(T("tusuk"), i18n.t("tusuk_gagal", ip=gun.ip, err=e), C_ERR)
             return
-        out("[tusuk]", f"{gun.ip} {len(blob)}B @ {stamp(sent)}", C_OK)
+        out(T("tusuk"), i18n.t("tusuk_kirim", ip=gun.ip, size=len(blob), time=stamp(sent)), C_OK)
 
         for k in range(self.tusukan):
             try:
                 _, body = gun.read()
             except Exception as e:
-                out("[serap]", f"{gun.ip} putus #{k}: {e}", C_WARN)
+                out(T("serap"), i18n.t("serap_putus", ip=gun.ip, n=k, err=e), C_WARN)
                 return
             got = self.clock.now()
             try:
@@ -619,7 +622,7 @@ class Sergap:
     def _susulan(self):
         g, tok = self.laras[0]
         end = self.clock.now() + self.susulan_s
-        out("[susul]", f"susul pelan {self.susulan_s:.0f}s", C_INFO)
+        out(T("susul"), i18n.t("susul_mulai", sec=self.susulan_s), C_INFO)
         hits = 0
         while self.clock.now() < end and self.winner is None:
             try:
@@ -640,7 +643,7 @@ class Sergap:
                 except Exception:
                     break
             time.sleep(0.1)
-        out("[susul]", f"{hits} tusukan tambahan", C_DIM)
+        out(T("susul"), i18n.t("susul_hasil", n=hits), C_DIM)
 
     def report(self):
         print()
@@ -648,22 +651,24 @@ class Sergap:
             ip, k, when, j = self.winner
             res = (j.get("data") or {}).get("apply_result")
             label = "sergap" if k >= 0 else "susul"
-            out("[putusan]", f"{'TIKET DIDAPAT' if res == 1 else 'TIKET SUDAH ADA'} "
-                           f"via {ip} ({label}) @ {stamp(when)}",
+            out(T("putusan"),
+                i18n.t("tiket_dapat" if res == 1 else "tiket_ada",
+                       ip=ip, via=label, time=stamp(when)),
                 C_OK if res == 1 else C_WARN)
             print(json.dumps(j, indent=2, ensure_ascii=False))
             return res == 1
 
-        out("[putusan]", f"{len(self.results)} respons, tidak ada tiket", C_WARN)
+        out(T("putusan"), i18n.t("putusan_tidak_ada", n=len(self.results)), C_WARN)
         agg = {}
         for _, _, _, code, result, msg in self.results:
             key = f"code={code} apply_result={result} msg={msg!r}"
             agg[key] = agg.get(key, 0) + 1
         for k, v in sorted(agg.items(), key=lambda x: -x[1]):
-            out("[putusan]", f"  x{v}  {k}", C_DIM)
+            out(T("putusan"), f"  x{v}  {k}", C_DIM)
         if self.results:
             ts = sorted(r[2] for r in self.results)
-            out("[putusan]", f"  respons {stamp(ts[0])} .. {stamp(ts[-1])}", C_DIM)
+            out(T("putusan"), i18n.t("putusan_respons",
+                                     first=stamp(ts[0]), last=stamp(ts[-1])), C_DIM)
         return False
 
 
@@ -707,10 +712,10 @@ def ask_tokens():
             v = ""
         v = v.strip()
         if not v:
-            out("[lewat]", f"{label} kosong", C_DIM)
+            out(T("lewat"), i18n.t("token_kosong", label=label), C_DIM)
             continue
         ok, desc, _ = check_token(v)
-        out("[periksa]", f"{label}: {desc}", C_OK if ok else C_ERR)
+        out(T("periksa"), f"{label}: {desc}", C_OK if ok else C_ERR)
         if ok:
             found.append(v)
     return found
@@ -723,22 +728,22 @@ def cmd_verify(clock, ips):
     except Exception:
         v = ""
     if not v:
-        out("[gagal]", "kosong", C_ERR)
+        out(T("gagal"), i18n.t("token_kosong", label="token"), C_ERR)
         return 2
     ok, desc, raw = check_token(v)
-    out("[periksa]", desc, C_OK if ok else C_ERR)
+    out(T("periksa"), desc, C_OK if ok else C_ERR)
     if raw:
         print(json.dumps(raw, indent=2, ensure_ascii=False))
     return 0 if ok else 1
 
 
 def cmd_calibrate(clock, ips):
-    out("[ukur]", "ukur laju pipeline + RTT", C_INFO)
+    out(T("ukur"), i18n.t("ukur_mulai"), C_INFO)
     tok = "DUMMY"
     # pakai endpoint yang benar-benar bisa pipeline, sama seperti mode sergap
     usa = filter_pipeline(ips, tok)
     if not usa:
-        out("[ukur]", "tidak ada IP yang bisa pipeline", C_ERR)
+        out(T("ukur"), i18n.t("ukur_tidak_ada"), C_ERR)
         return 2
     g = Laras(usa[0])
     g.warm(tok)
@@ -749,27 +754,27 @@ def cmd_calibrate(clock, ips):
     for ip in ips:
         v = rtt(ip, 5)
         if v:
-            out("[rtt]", f"{ip}: RTT {v:.1f} ms -> RTT/2 {v/2:.1f} ms", C_DIM)
-    out("[catatan]", f"setelan sekarang: tusuk {FIRE_MS} ms sebelum batas, "
-                     f"{TUSUKAN} tusukan/laras", C_INFO)
+            out(T("rtt"), i18n.t("rtt_hasil", ip=ip, rtt=v, half=v/2), C_DIM)
+    out(T("catatan"), i18n.t("catatan_setelan", fire=FIRE_MS, n=TUSUKAN), C_INFO)
     return 0
 
 
 def cmd_selftest(clock, ips):
-    out("[uji]", "token palsu — mekanik & timing saja", C_INFO)
+    out(T("uji"), i18n.t("uji_mulai"), C_INFO)
     sergap = Sergap(clock, ips, ["DUMMY"], tusukan=16, susulan_s=0)
     sergap.prepare()
     sergap.calibrate()
     target = clock.now() + 6.0
-    out("[uji]", f"target {stamp(target)}", C_INFO)
+    out(T("uji"), i18n.t("uji_target", time=stamp(target)), C_INFO)
     countdown(clock, "selftest", target - 3)
     sergap.run(target)
     reached = sum(1 for r in sergap.results if r[3] == 100004)
-    out("[uji]", f"{len(sergap.results)} respons, {reached} sampai ke server", C_OK)
+    out(T("uji"), i18n.t("uji_hasil", n=len(sergap.results), ok=reached), C_OK)
     if sergap.results:
         ts = sorted(r[2] for r in sergap.results)
-        out("[uji]", f"respons {1000*(ts[0]-target):+.0f} .. "
-                          f"{1000*(ts[-1]-target):+.0f} ms dari target", C_DIM)
+        out(T("uji"), i18n.t("uji_respons",
+                             first=1000*(ts[0]-target),
+                             last=1000*(ts[-1]-target)), C_DIM)
     for g, _ in sergap.laras:
         g.close()
     return 0
@@ -778,33 +783,32 @@ def cmd_selftest(clock, ips):
 def cmd_sergap(clock, ips):
     tokens = ask_tokens()
     if not tokens:
-        out("[gagal]", "tidak ada token sah", C_ERR)
+        out(T("gagal"), i18n.t("token_tidak_ada"), C_ERR)
         return 2
 
     # flag yang tidak dipakai tetap ditanya; yang dipakai tidak ditanya
     tusukan = TUSUKAN if _cliset & 1 else int(
-        ask("Tusukan per laras", TUSUKAN))
+        ask(i18n.t("tanya_tusukan"), TUSUKAN))
     susulan = SUSULAN_S if _cliset & 2 else int(
-        ask("Susulan setelah sergap (detik, 0=mati)", SUSULAN_S))
+        ask(i18n.t("tanya_susulan"), SUSULAN_S))
 
     target = next_beijing_midnight()
     wait_h = (target - clock.now()) / 3600.0
-    out("[jadwal]", f"target {stamp(target)} CST = "
-                    f"{datetime.fromtimestamp(target).strftime('%H:%M:%S')} WIB", C_INFO)
-    out("[jadwal]", f"mulai sekarang berarti menunggu {wait_h:.1f} jam", C_INFO)
+    out(T("jadwal"), i18n.t("jadwal_target", cst=stamp(target),
+                            wib=datetime.fromtimestamp(target).strftime('%H:%M:%S')), C_INFO)
+    out(T("jadwal"), i18n.t("jadwal_tunggu", h=wait_h), C_INFO)
 
     if wait_h > 2.0:
-        out("[AWAS]", f"menunggu {wait_h:.1f} jam. Risiko: Termux dibunuh "
-                            f"Android, HP restart, atau sinyal hilang.", C_WARN)
-        out("[AWAS]", "lebih aman jalankan 22:55-22:59 WIB.", C_WARN)
-        if ask("Teruskan? (y/n)", "n").lower() != "y":
+        out(T("AWAS"), i18n.t("jadwal_awas", h=wait_h), C_WARN)
+        out(T("AWAS"), i18n.t("jadwal_saran"), C_WARN)
+        if ask(i18n.t("tanya_lanjut"), "n").lower() != "y":
             return 3
 
     if acquire_wake_lock():
-        out("[jaga]", "aktif — Android tidak akan bekukan Termux", C_OK)
+        out(T("jaga"), i18n.t("jaga_aktif"), C_OK)
     else:
-        out("[jaga]", "GAGAL (harus dari dalam app Termux, bukan adb)", C_WARN)
-        out("[jaga]", "buka Termux, jalankan termux-wake-lock sekali", C_WARN)
+        out(T("jaga"), i18n.t("jaga_gagal"), C_WARN)
+        out(T("jaga"), i18n.t("jaga_saran"), C_WARN)
 
     sergap = Sergap(clock, ips, tokens, tusukan=tusukan, susulan_s=susulan)
     # prepare+calibrate cost 0.8-2.6 s and final resync up to 1.5 s.
@@ -813,7 +817,7 @@ def cmd_sergap(clock, ips):
     countdown(clock, "siaga", prep)
     sergap.prepare()
     if not sergap.laras:
-        out("[gagal]", "tidak ada laras hidup — cek sinyal/data, lalu ulangi", C_ERR)
+        out(T("gagal"), i18n.t("lane_tidak_ada"), C_ERR)
         return 4
     sergap.calibrate()
 
@@ -838,8 +842,8 @@ def cmd_sergap(clock, ips):
                 corr = clock.resync(b[0])
                 last_sync = clock.now()
                 if abs(corr) > 2:
-                    out("[sinkron]", f"koreksi jam {corr:+.1f} ms "
-                                    f"(offset {b[0]:+.1f})", C_DIM)
+                    out(T("sinkron"), i18n.t("sinkron_koreksi",
+                                             corr=corr, off=b[0]), C_DIM)
 
     # sinkron final tepat sebelum tusukan: ini yang paling menentukan.
     # Batas keras 1.5 s supaya server NTP mati tidak memakan margin, dan lewati
@@ -848,10 +852,10 @@ def cmd_sergap(clock, ips):
         b = best_ntp(rounds=9, budget_s=1.5)
         if b:
             corr = clock.resync(b[0])
-            out("[sinkron]", f"selisih akhir {b[0]:+.1f} ms (tunda {b[1]:.1f}), "
-                            f"koreksi {corr:+.1f} ms", C_OK)
+            out(T("sinkron"), i18n.t("sinkron_akhir", off=b[0],
+                                     delay=b[1], corr=corr), C_OK)
     else:
-        out("[sinkron]", "dilewati — sudah terlalu dekat batas", C_DIM)
+        out(T("sinkron"), i18n.t("sinkron_lewat"), C_DIM)
 
     countdown(clock, "aba-aba", target - 1.0)
     sergap.run(target)
@@ -878,17 +882,23 @@ USAGE = """pakai: keris.py [opsi]
 def parse_args(argv):
     """Parser manual: tidak butuh argparse, jalan di Python 3.6+."""
     opts = {"verify": False, "calibrate": False, "selftest": False,
-            "tusukan": None, "susulan": None, "fire_ms": None}
+            "tusukan": None, "susulan": None, "fire_ms": None,
+            "lang": None, "help": False}
     i = 0
     while i < len(argv):
         a = argv[i]
         if a in ("-h", "--help"):
-            print(USAGE)
-            raise SystemExit(0)
-        if a == "--versi":
+            opts["help"] = True
+        elif a == "--versi":
             print(VERSION)
             raise SystemExit(0)
-        if a == "--verify":
+        elif a == "--lang":
+            if i + 1 >= len(argv):
+                print("--lang butuh en atau id")
+                raise SystemExit(2)
+            opts["lang"] = argv[i + 1]
+            i += 1
+        elif a == "--verify":
             opts["verify"] = True
         elif a == "--calibrate":
             opts["calibrate"] = True
@@ -913,24 +923,146 @@ def parse_args(argv):
     return opts
 
 
+def pick_language():
+    """Tanya bahasa sekali di awal. Simpan supaya tidak ditanya lagi."""
+    code = i18n.saved_lang()
+    if code:
+        i18n.set_lang(code)
+        return
+    # belum pernah pilih: tanya. Jawaban kosong/ngawur -> Inggris.
+    print(f"{C_INFO}{'=' * 58}{C_RST}")
+    print("  KERIS — UBL ticket sniper / penembak tiket UBL")
+    print(f"  {i18n.t('by')}")
+    print(f"{C_INFO}{'=' * 58}{C_RST}\n")
+    print("  Pilih bahasa / Choose language:")
+    print("    1) English")
+    print("    2) Indonesia")
+    try:
+        ans = input("  Nomor / Number (1/2) [1]: ").strip()
+    except (EOFError, KeyboardInterrupt):
+        ans = "1"
+    code = "id" if ans == "2" else "en"
+    i18n.save_lang(code)
+    i18n.set_lang(code)
+    print(f"  {i18n.t('bahasa_disimpan')}\n")
+
+
+def banner():
+    print(f"{C_INFO}{'=' * 58}{C_RST}")
+    print(f"  {i18n.t('banner', ver=VERSION)}")
+    print(f"  {i18n.t('by')}")
+    print(f"{C_INFO}{'=' * 58}{C_RST}\n")
+
+
+def help_text():
+    """Bantuan dua bahasa, mengikuti bahasa aktif."""
+    if i18n.lang() == "id":
+        return f"""KERIS — penembak tiket Unlock Bootloader Xiaomi
+oleh Ds Project
+
+PAKAI
+  keris              sergap (tanya token, lalu tunggu batas)
+  keris-cek          cek token masih sah, tanpa menunggu
+  keris-cal          ukur laju jaringan sekarang
+  keris-test         latihan pakai token palsu
+  keris-update       ambil versi terbaru
+
+OPSI
+  --tusukan N        tusukan per laras (default {TUSUKAN})
+  --susulan DETIK    susulan setelah sergap, 0=mati (default {SUSULAN_S})
+  --fire-ms MS       tusuk sekian ms sebelum batas (default {FIRE_MS})
+  --lang             ganti bahasa (en/id)
+  --verify           sama dengan keris-cek
+  --calibrate        sama dengan keris-cal
+  --selftest         sama dengan keris-test
+  --versi            cetak versi
+  --help             tampilkan bantuan ini
+
+ALUR MALAM H
+  1. 22:55  keris-cal          ukur jaringan
+  2. 22:57  keris-cek          tempel token, pastikan "siap sergap"
+  3. 22:58  keris              tempel token, Enter, Enter
+  4.        tunggu            script menembak otomatis
+
+  Batas: 00:00:00 CST = 23:00:00 WIB.
+
+TOKEN
+  Ambil dari app Mi Community lewat PCAPdroid:
+  request ke sgp-api.buy.mi.com/bbs/api/global/apply/bl-auth
+  copy seluruh baris Cookie. Berlaku satu hari.
+"""
+    return f"""KERIS — Xiaomi bootloader-unlock ticket sniper
+by Ds Project
+
+USAGE
+  keris              snipe (asks token, waits for boundary)
+  keris-cek          check token is still valid, no waiting
+  keris-cal          measure network rate now
+  keris-test         rehearsal with a fake token
+  keris-update       fetch latest version
+
+OPTIONS
+  --tusukan N        shots per lane (default {TUSUKAN})
+  --susulan SEC      follow-up after snipe, 0=off (default {SUSULAN_S})
+  --fire-ms MS       fire this many ms before boundary (default {FIRE_MS})
+  --lang             change language (en/id)
+  --verify           same as keris-cek
+  --calibrate        same as keris-cal
+  --selftest         same as keris-test
+  --versi            print version
+  --help             show this help
+
+NIGHT-OF RUN
+  1. 22:55  keris-cal          measure network
+  2. 22:57  keris-cek          paste token, expect "ready"
+  3. 22:58  keris              paste token, Enter, Enter
+  4.        wait             it fires automatically
+
+  Boundary: 00:00:00 CST = 23:00:00 WIB (UTC+7).
+
+TOKEN
+  Capture from the Mi Community app via PCAPdroid:
+  request to sgp-api.buy.mi.com/bbs/api/global/apply/bl-auth
+  copy the whole Cookie line. Valid for one day.
+"""
+
+
 def main(argv):
     global FIRE_MS, TUSUKAN, SUSULAN_S
 
     args = parse_args(argv)
 
-    print(f"{C_INFO}{'=' * 58}{C_RST}")
-    print(f"  KERIS — presisi sergap tiket UBL   {VERSION}")
-    print(f"{C_INFO}{'=' * 58}{C_RST}\n")
+    # bahasa: --lang menang, lalu yang tersimpan, lalu tanya sekali
+    if args.get("lang"):
+        if args["lang"] in ("en", "id"):
+            i18n.save_lang(args["lang"])
+            i18n.set_lang(args["lang"])
+        else:
+            print(f"--lang needs 'en' or 'id', not {args['lang']!r}")
+            return 2
+    else:
+        pick_language()
+
+    if args.get("help"):
+        banner()
+        print(help_text())
+        return 0
+
+    banner()
 
     ips = resolve_all()
-    out("[dns]", f"{HOST} -> {', '.join(ips)}", C_INFO)
+    if ips:
+        out(T("dns"), i18n.t("dns_hasil", host=HOST, ips=", ".join(ips)), C_INFO)
+    else:
+        out(T("dns"), i18n.t("dns_cadangan"), C_WARN)
 
     best = best_ntp(budget_s=2.0)
     if best:
-        out("[ntp]", f"selisih {best[0]:+.1f} ms (tunda {best[1]:.1f}, {best[2]})", C_OK)
+        out(T("ntp"), i18n.t("ntp_selisih", off=best[0], delay=best[1],
+                             server=best[2]), C_OK)
         offset = best[0]
     else:
-        out("[ntp]", "NTP gagal — pakai jam HP", C_ERR)
+        out(T("ntp"), i18n.t("ntp_gagal"), C_ERR)
         offset = 0.0
     clock = Clock(offset)
 
