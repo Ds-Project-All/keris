@@ -2,6 +2,12 @@
 
 <img src="assets/banner.svg" alt="KERIS — Xiaomi bootloader-unlock ticket sniper" width="820">
 
+[![Stars](https://img.shields.io/github/stars/Ds-Project-All/keris?style=for-the-badge&logo=github&color=58a6ff)](https://github.com/Ds-Project-All/keris/stargazers)
+[![Forks](https://img.shields.io/github/forks/Ds-Project-All/keris?style=for-the-badge&logo=github&color=58a6ff)](https://github.com/Ds-Project-All/keris/forks)
+[![Watchers](https://img.shields.io/github/watchers/Ds-Project-All/keris?style=for-the-badge&logo=github&color=58a6ff)](https://github.com/Ds-Project-All/keris/watchers)
+[![Last commit](https://img.shields.io/github/last-commit/Ds-Project-All/keris?style=for-the-badge&color=9b6bff)](https://github.com/Ds-Project-All/keris/commits/main)
+[![License](https://img.shields.io/github/license/Ds-Project-All/keris?style=for-the-badge&color=7ee787)](LICENSE)
+
 | | |
 |---|---|
 | **Target** | Xiaomi Global UBL ticket, `00:00:00 CST` daily reset |
