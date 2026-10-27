@@ -24,7 +24,6 @@ Pakai:
 """
 from __future__ import annotations
 
-import argparse
 import atexit
 import gzip
 import json
@@ -76,8 +75,13 @@ C_OK, C_ERR, C_WARN, C_INFO, C_DIM = (
 C_RST = "\033[0m"
 
 _lock = threading.Lock()
-_cliset = 0          # bitmask: 1 = --fire-ms, 2 = --tusukan/--susulan dipakai
+_cliset = 0          # bitmask: 1 = --tusukan dipakai, 2 = --susulan dipakai
 _DEV_RE = re.compile(r"deviceId=[^;]*")
+
+
+def _cliset_add(n):
+    global _cliset
+    _cliset |= n
 
 
 def out(tag, msg, color=C_INFO):
@@ -189,21 +193,13 @@ class Clock:
 _wake_held = False
 
 
-def _on_termux():
-    """Termux = Android + PREFIX menunjuk ke folder usr milik Termux."""
-    return ("com.termux" in os.environ.get("PREFIX", "")
-            or os.path.isdir("/data/data/com.termux/files/usr"))
-
-
 def acquire_wake_lock():
     """Cegah Android membekukan Termux selama menunggu.
 
-    Hanya berlaku di Termux. Di Linux/macOS/Windows tidak ada yang perlu
-    dijaga, jadi langsung dianggap beres (True) tanpa memanggil shell.
+    Butuh Termux:API (`pkg install termux-api`). Kalau tidak ada, cukup
+    peringatan — sisa program tetap jalan.
     """
     global _wake_held
-    if not _on_termux():
-        return True                     # bukan Android: tidak perlu apa-apa
     import shutil
     if shutil.which("termux-wake-lock") is None:
         return False
@@ -364,8 +360,11 @@ class Laras:
 def resolve_all():
     """Semua A-record. Sebagian endpoint CDN menutup koneksi setelah satu
     respons, jadi pipeline hanya jalan di endpoint yang mendukung keep-alive."""
-    ips = sorted({i[4][0] for i in socket.getaddrinfo(
-        HOST, 443, socket.AF_INET, socket.SOCK_STREAM)})
+    try:
+        ips = sorted({i[4][0] for i in socket.getaddrinfo(
+            HOST, 443, socket.AF_INET, socket.SOCK_STREAM)})
+    except (socket.gaierror, OSError):
+        ips = []                        # DNS mati — pakai cadangan saja
     # DNS lokal bisa mengarahkan ke PoP yang tidak mendukung pipeline
     # (mis. ams.aznl dari Eropa). Tambahkan A-record Asia sebagai cadangan.
     for extra in EXTRA_IPS:
@@ -553,6 +552,17 @@ class Sergap:
             self.gap_ms = gaps[len(gaps) // 2]
         out("[ukur]", f"{self.gap_ms:.1f} ms/req "
                            f"-> {self.tusukan} tusukan menutup {self.tusukan*self.gap_ms:.0f} ms", C_OK)
+        # jaringan lambat: tusukan yang mendarat dulu sudah mengambil kuota,
+        # sisanya cuma spam. Kecilkan tusukan biar muat ~300 ms burst.
+        # Minimum 2: satu tusukan tanpa cadangan kalah kalau kena 429.
+        if self.tusukan * self.gap_ms > 300.0:
+            old = self.tusukan
+            self.tusukan = max(2, min(old, round(300.0 / self.gap_ms)))
+            out("[ukur]", f"jaringan lambat: tusukan {old} -> {self.tusukan} "
+                          f"(biar muat 300 ms)", C_WARN)
+            if self.gap_ms > 60.0:
+                out("[AWAS]", f"{self.gap_ms:.0f} ms/req terlalu lambat untuk "
+                              f"rebutan kuota. Pakai WiFi atau 4G.", C_ERR)
 
     def run(self, target):
         if not self.laras:
@@ -771,14 +781,11 @@ def cmd_sergap(clock, ips):
         out("[gagal]", "tidak ada token sah", C_ERR)
         return 2
 
-    # tanpa flag --tusukan/--susulan: tanya lewat prompt
-    # dengan flag: pakai nilai CLI, jangan tanya
-    if _cliset & 2:
-        tusukan = TUSUKAN
-        susulan = SUSULAN_S
-    else:
-        tusukan = int(ask("Tusukan per laras", TUSUKAN))
-        susulan = int(ask("Susulan setelah sergap (detik, 0=mati)", SUSULAN_S))
+    # flag yang tidak dipakai tetap ditanya; yang dipakai tidak ditanya
+    tusukan = TUSUKAN if _cliset & 1 else int(
+        ask("Tusukan per laras", TUSUKAN))
+    susulan = SUSULAN_S if _cliset & 2 else int(
+        ask("Susulan setelah sergap (detik, 0=mati)", SUSULAN_S))
 
     target = next_beijing_midnight()
     wait_h = (target - clock.now()) / 3600.0
@@ -805,6 +812,9 @@ def cmd_sergap(clock, ips):
     prep = max(target - 30, clock.now())
     countdown(clock, "siaga", prep)
     sergap.prepare()
+    if not sergap.laras:
+        out("[gagal]", "tidak ada laras hidup — cek sinyal/data, lalu ulangi", C_ERR)
+        return 4
     sergap.calibrate()
 
     # keep-alive dies 10..20 s idle -> re-warm every 6 s.
@@ -851,34 +861,62 @@ def cmd_sergap(clock, ips):
     return 0 if won else 1
 
 
-def build_parser():
-    ap = argparse.ArgumentParser(
-        prog="keris.py",
-        description="KERIS — presisi sergap tiket Unlock Bootloader Xiaomi.",
-        epilog="Tanpa argumen = jalankan sergap penuh.",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        add_help=True)
-    ap.add_argument("--verify", action="store_true",
-                    help="cek token masih sah, cetak state, keluar")
-    ap.add_argument("--calibrate", action="store_true",
-                    help="ukur laju pipeline + RTT sekarang")
-    ap.add_argument("--selftest", action="store_true",
-                    help="latihan mekanik pakai token palsu")
-    ap.add_argument("--fire-ms", type=int, default=FIRE_MS, metavar="MS",
-                    help=f"tusuk sekian ms sebelum batas (default {FIRE_MS})")
-    ap.add_argument("--tusukan", type=int, default=TUSUKAN, metavar="N",
-                    help=f"tusukan per laras (default {TUSUKAN})")
-    ap.add_argument("--susulan", type=int, default=SUSULAN_S, metavar="DETIK",
-                    help=f"susulan setelah sergap, 0=mati (default {SUSULAN_S})")
-    ap.add_argument("--versi", action="version", version=VERSION)
-    return ap
+USAGE = """pakai: keris.py [opsi]
+
+  (tanpa opsi)      jalankan sergap
+  --verify          cek token, cetak state, keluar
+  --calibrate       ukur laju pipeline + RTT
+  --selftest        latihan mekanik pakai token palsu
+  --tusukan N       tusukan per laras (default 32)
+  --susulan DETIK   susulan setelah sergap, 0=mati (default 15)
+  --fire-ms MS      tusuk sekian ms sebelum batas (default -45)
+  --versi           cetak versi
+  --help            tampilkan bantuan ini
+"""
+
+
+def parse_args(argv):
+    """Parser manual: tidak butuh argparse, jalan di Python 3.6+."""
+    opts = {"verify": False, "calibrate": False, "selftest": False,
+            "tusukan": None, "susulan": None, "fire_ms": None}
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a in ("-h", "--help"):
+            print(USAGE)
+            raise SystemExit(0)
+        if a == "--versi":
+            print(VERSION)
+            raise SystemExit(0)
+        if a == "--verify":
+            opts["verify"] = True
+        elif a == "--calibrate":
+            opts["calibrate"] = True
+        elif a == "--selftest":
+            opts["selftest"] = True
+        elif a in ("--tusukan", "--susulan", "--fire-ms"):
+            if i + 1 >= len(argv):
+                print(f"{a} butuh angka")
+                raise SystemExit(2)
+            try:
+                v = int(argv[i + 1])
+            except ValueError:
+                print(f"{a} butuh angka, bukan {argv[i + 1]!r}")
+                raise SystemExit(2)
+            opts[a.lstrip("-").replace("-", "_")] = v
+            i += 1
+        else:
+            print(f"opsi tidak dikenal: {a}\n")
+            print(USAGE)
+            raise SystemExit(2)
+        i += 1
+    return opts
 
 
 def main(argv):
-    global FIRE_MS, TUSUKAN, SUSULAN_S, _cliset
+    global FIRE_MS, TUSUKAN, SUSULAN_S
 
-    ap = build_parser()
-    args = ap.parse_args(argv)
+    args = parse_args(argv)
 
     print(f"{C_INFO}{'=' * 58}{C_RST}")
     print(f"  KERIS — presisi sergap tiket UBL   {VERSION}")
@@ -896,21 +934,22 @@ def main(argv):
         offset = 0.0
     clock = Clock(offset)
 
-    if args.verify:
+    if args["verify"]:
         return cmd_verify(clock, ips)
-    if args.calibrate:
+    if args["calibrate"]:
         return cmd_calibrate(clock, ips)
-    if args.selftest:
+    if args["selftest"]:
         return cmd_selftest(clock, ips)
 
     # nilai dari CLI menimpa default konstanta
-    if args.fire_ms != FIRE_MS:
-        _cliset |= 1
-    FIRE_MS = args.fire_ms
-    if args.tusukan != TUSUKAN or args.susulan != SUSULAN_S:
-        _cliset |= 2
-    TUSUKAN = args.tusukan
-    SUSULAN_S = args.susulan
+    if args["fire_ms"] is not None:
+        FIRE_MS = args["fire_ms"]
+    if args["tusukan"] is not None:
+        TUSUKAN = args["tusukan"]
+        _cliset_add(1)
+    if args["susulan"] is not None:
+        SUSULAN_S = args["susulan"]
+        _cliset_add(2)
     return cmd_sergap(clock, ips)
 
 

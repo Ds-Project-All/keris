@@ -1,6 +1,7 @@
 # KERIS
 
-Presisi sergap tiket Unlock Bootloader Xiaomi (HyperOS / Mi Community Global).
+Presisi sergap tiket Unlock Bootloader Xiaomi (HyperOS / Mi Community Global)
+**dari HP Android**. Tanpa PC, tanpa root, tanpa `pip install`.
 
 Satu perintah, 128 tusukan dalam ~200 ms, dijadwalkan ke milidetik batas
 `00:00:00 CST` (23:00:00 WIB).
@@ -49,59 +50,61 @@ Bracket simetris membuang separuh percobaan. KERIS hanya menembak ke depan.
 
 ## Pasang
 
-Satu file, tanpa dependensi di luar stdlib. Python 3.8+.
+Satu file, tanpa dependensi di luar stdlib. Python 3.6+.
 
-### Android (Termux) — disarankan
+**Semua langkah di bawah dikerjakan di HP.** Tidak butuh PC, tidak butuh root.
 
-Pakai Termux dari [F-Droid](https://f-droid.org/packages/com.termux/) atau
+### 1. Termux
+
+Ambil dari [F-Droid](https://f-droid.org/packages/com.termux/) atau
 [GitHub release](https://github.com/termux/termux-app/releases). Versi Play
 Store sudah usang dan tidak bisa `pkg install`.
 
+### 2. Python
+
 ```bash
 pkg update && pkg install python -y
-termux-wake-lock
-python keris.py --selftest
 ```
 
-`termux-wake-lock` mencegah Android membekukan proses saat menunggu.
-
-### Linux
+### 3. Cegah Android membekukan Termux
 
 ```bash
-python3 -m pip install --upgrade pip   # opsional
+pkg install termux-api -y
+```
+
+Lalu pasang app **Termux:API** dari F-Droid juga, dan izinkan notifikasinya.
+Tanpa ini Android bisa membekukan Termux saat menunggu lama — sergap gagal
+tanpa pesan apa pun.
+
+Minimalnya, kalau tidak mau repot:
+
+- Settings → Apps → Termux → Battery → **Unrestricted**
+- Kunci Termux di recent apps
+
+### 4. Salin script
+
+```bash
+mkdir -p ~/keris && cd ~/keris
+# salin keris.py ke sini
 chmod +x keris.py
-./keris.py --selftest
+python keris.py --versi
 ```
-
-Debian/Ubuntu yang belum punya Python: `sudo apt install python3`.
-
-### macOS
-
-```bash
-python3 keris.py --selftest
-```
-
-Python 3 sudah ada di macOS 12+. Kalau belum: `brew install python3`.
-
-### Windows
-
-```powershell
-python keris.py --selftest
-```
-
-Butuh [Python 3.8+](https://python.org/downloads) — centang **Add Python to PATH**
-saat instalasi. PowerShell dan CMD sama-sama bisa.
 
 ### Diuji di
 
-| OS | Versi | Hasil |
+| Perangkat | Python | Hasil |
 |---|---|---|
-| Android 16 / Termux | Python 3.14.8 | semua mode lolos, 64/64 tusukan |
-| Ubuntu 24.04 (VPS) | Python 3.12.3 | semua mode lolos, 64/64 tusukan |
-| Windows 10 | Python 3.14.7 | semua mode lolos, 64/64 tusukan |
-| macOS | — | belum diuji langsung |
+| Redmi Note 13 Pro 5G, Android 16, Termux | 3.14.8 | 64/64 tusukan, NTP +263.8 ms |
+| Windows 10 | 3.14.7 | 64/64 tusukan, NTP −38.5 ms |
+| Windows 10 | 3.11 | 64/64 tusukan (uji kompatibilitas) |
+| Ubuntu 24.04 | 3.12.3 | 64/64 tusukan, endpoint Eropa |
 
-macOS memakai API socket POSIX yang sama dengan Linux, jadi seharusnya jalan.
+Sintaks bersih untuk **Python 3.6+** — jalan di Android 7 ke atas. Tidak ada API
+yang berubah di rentang itu.
+
+Dari Indonesia DNS memberi endpoint Asia yang mendukung pipeline. Kalau DNS
+lokal memberi endpoint Eropa, `EXTRA_IPS` menambahkan A-record Asia sebagai
+cadangan, lalu disaring lagi.
 
 ### Kalau endpoint tidak bisa pipeline
 
@@ -116,12 +119,22 @@ KERIS mengukur ini otomatis sebelum sergap:
 [laras]  4/4 siap (1 akun)
 ```
 
-Kalau DNS lokal hanya memberi endpoint Eropa, `EXTRA_IPS` menambahkan
-A-record Asia sebagai cadangan, lalu disaring lagi. Yang tidak lolos tes
-2-request otomatis dibuang.
-
 Konsekuensinya: dari Eropa RTT ke Asia ~166 ms, dari Indonesia ~40 ms.
-**HP di Indonesia tetap jalur tercepat.**
+**HP di Indonesia jalur tercepat.**
+
+### Kalau jaringan lambat
+
+KERIS mengukur laju sebelum sergap. Kalau 32 tusukan butuh lebih dari 300 ms,
+jumlahnya dikecilkan otomatis supaya semuanya mendarat:
+
+```
+[ukur]       150.2 ms/req -> 32 tusukan menutup 4805 ms
+[ukur]       jaringan lambat: tusukan 32 -> 2 (biar muat 300 ms)
+[AWAS]       150 ms/req terlalu lambat untuk rebutan kuota. Pakai WiFi atau 4G.
+```
+
+Di 150 ms/req, 32 tusukan butuh 4,8 detik. Tusukan ke-3 dan seterusnya mendarat
+setelah kuota diambil orang — itu spam, bukan sergap.
 
 ## Ambil token
 
@@ -269,13 +282,17 @@ Modul internal:
 
 ## Batasan
 
-- Butuh Python 3.8+ (stdlib saja, tanpa `pip install`).
-- Diuji langsung di Android/Termux, Ubuntu 24.04, dan Windows 10. macOS belum.
+- Butuh Python 3.6+ (stdlib saja, tanpa `pip install`).
+- Diuji langsung di Android 16/Termux. Android 7–15 belum diuji di perangkat
+  nyata, tapi tidak ada API yang berubah di rentang itu.
 - Lokasi menentukan hasil. Dari Indonesia RTT ~40 ms; dari Eropa ~166 ms dan
-  endpoint CDN-nya tidak mendukung pipelining. **HP di Indonesia tetap
-  jalur tercepat** — PC/VPS berguna sebagai cadangan.
+  endpoint CDN-nya tidak mendukung pipelining. **HP di Indonesia jalur
+  tercepat** — PC/VPS cuma cadangan.
 - Kuota harian bisa habis dalam <50 ms. 128 tusukan dalam 200 ms sudah maksimal;
   kalau ada ribuan pesaing, yang menang tetap jalur terdekat ke Singapura.
+- Jaringan di bawah 60 ms/req (3G/2G) hampir pasti kalah — KERIS akan
+  memperingatkan, bukan diam-diam gagal.
+- Token berlaku satu hari.
 - Endpoint bisa ditambal Xiaomi kapan saja.
 
 ## Lisensi
