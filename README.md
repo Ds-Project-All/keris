@@ -216,21 +216,59 @@ drops what fails.
 The token is the `new_bbs_serviceToken` cookie from the Mi Community app. It is
 valid for **one day**, so capture it on the day.
 
-1. Phone must already be logged in to **Mi Community** (`com.mi.global.bbs`).
-2. Install **PCAPdroid** from Play Store.
-3. PCAPdroid → Settings → **HTTPS decryption** → **Install CA certificate**.
-4. PCAPdroid → Settings → **Target apps** → tick **Mi Community** only.
-5. Start capture, open the app → **Profile** → **Unlock Bootloader**.
-6. Stop, find `POST https://sgp-api.buy.mi.com/bbs/api/global/apply/bl-auth`.
-7. Copy the whole **Cookie** line.
+### 1. Install Reqable (recommended)
+
+Reqable reads the app's HTTPS traffic so the cookie line can be copied.
+
+1. Install **Reqable** from Play Store or https://reqable.com (APK).
+2. First run → allow the **VPN** prompt (record mode = VPN, this is the default).
+   This is a *local* VPN on the phone; it does not route through any server.
+3. Open the side drawer (☰) → **Certificate Management** → **Install Root
+   Certificate** → **Export / save the CA file**.
+4. Install it as a CA: Settings → **Security** → **More security settings** →
+   **Encryption & credentials** → **Install a certificate** → **CA certificate**
+   → pick the Reqable file → name it `reqable`. Android shows a warning —
+   confirm.
+
+### 2. Make Mi Community trust the certificate
+
+Apps targeting Android 7+ only trust **system** certificates, so a plain user
+certificate may fail with SSL errors. Two ways:
+
+- **Rooted phone (most reliable):** in Reqable → Certificate Management →
+  install the root certificate **to the system store** (requires root), or use
+  the Magisk module *Always Trust User Certs*.
+- **No root:** try the user certificate first. If Mi Community pages fail to
+  load while capturing, that is the cause — a rooted path is the workaround.
+
+### 3. Capture
+
+1. Reqable → **Enhanced Mode** on, **Record Mode = VPN**.
+2. Target apps: tick **Mi Community** only (less noise).
+3. Press the capture button (dot) — VPN permission → **Allow**.
+4. Open **Mi Community** → **Profile** → **Unlock Bootloader**.
+5. Back to Reqable: find `POST https://sgp-api.buy.mi.com/bbs/api/global/apply/bl-auth`.
+6. Open the request → **Request** tab → copy the whole **Cookie** header value.
 
 KERIS only needs the `new_bbs_serviceToken=...` part — `versionCode` and
 `deviceId` are rebuilt automatically. Pasting the whole line is also fine.
 
+If nothing appears: check the capture dot is on, VPN mode is selected, filters
+are cleared, and open www.google.com in a browser — if that appears in Reqable,
+the app filter or Enhanced Mode is the problem (per Reqable's Android FAQ).
+
 If the **Unlock bootloader** menu is missing, set the app region to **Global**.
 
-**Turn off PCAPdroid and any VPN before firing.** A local VPN adds 50-150 ms and
+**Turn off capture and any VPN before firing.** A local VPN adds 50-150 ms and
 destroys the precision.
+
+### Optional capture apps
+
+Reqable above is the recommended one. Any of these work the same way if you
+already have them: **PCAPdroid** (Play Store, no root for user-certs),
+**HTTP Toolkit** (Android app), or any MITM proxy with a system CA. The steps
+are always: install CA → capture → copy the `Cookie:` line of the
+`bl-auth` request.
 
 ---
 

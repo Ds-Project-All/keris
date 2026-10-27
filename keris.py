@@ -1012,7 +1012,7 @@ ALUR MALAM H
   Batas: 00:00:00 CST = 23:00:00 WIB.
 
 TOKEN
-  Ambil dari app Mi Community lewat PCAPdroid:
+  Ambil dari app Mi Community lewat Reqable (atau sniffer lain):
   request ke sgp-api.buy.mi.com/bbs/api/global/apply/bl-auth
   copy seluruh baris Cookie. Berlaku satu hari.
 """
@@ -1046,7 +1046,7 @@ NIGHT-OF RUN
   Boundary: 00:00:00 CST = 23:00:00 WIB (UTC+7).
 
 TOKEN
-  Capture from the Mi Community app via PCAPdroid:
+  Capture from the Mi Community app via Reqable (or any sniffer):
   request to sgp-api.buy.mi.com/bbs/api/global/apply/bl-auth
   copy the whole Cookie line. Valid for one day.
 """
